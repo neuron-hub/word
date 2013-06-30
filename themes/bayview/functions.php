@@ -1,0 +1,886 @@
+<?php
+/**
+ * Twenty Twelve functions and definitions.
+ *
+ * Sets up the theme and provides some helper functions, which are used
+ * in the theme as custom template tags. Others are attached to action and
+ * filter hooks in WordPress to change core functionality.
+ *
+ * When using a child theme (see http://codex.wordpress.org/Theme_Development and
+ * http://codex.wordpress.org/Child_Themes), you can override certain functions
+ * (those wrapped in a function_exists() call) by defining them first in your child theme's
+ * functions.php file. The child theme's functions.php file is included before the parent
+ * theme's file, so the child theme functions would be used.
+ *
+ * Functions that are not pluggable (not wrapped in function_exists()) are instead attached
+ * to a filter or action hook.
+ *
+ * For more information on hooks, actions, and filters, see http://codex.wordpress.org/Plugin_API.
+ *
+ * @package WordPress
+ * @subpackage Twenty_Twelve
+ * @since Twenty Twelve 1.0
+ */
+/**
+ * Sets up the content width value based on the theme's design and stylesheet.
+ */
+if (!isset($content_width))
+    $content_width = 625;
+
+/**
+ * Sets up theme defaults and registers the various WordPress features that
+ * Twenty Twelve supports.
+ *
+ * @uses load_theme_textdomain() For translation/localization support.
+ * @uses add_editor_style() To add a Visual Editor stylesheet.
+ * @uses add_theme_support() To add support for post thumbnails, automatic feed links,
+ * 	custom background, and post formats.
+ * @uses register_nav_menu() To add support for navigation menus.
+ * @uses set_post_thumbnail_size() To set a custom post thumbnail size.
+ *
+ * @since Twenty Twelve 1.0
+ */
+function bayview_setup() {
+    /*
+     * Makes Twenty Twelve available for translation.
+     *
+     * Translations can be added to the /languages/ directory.
+     * If you're building a theme based on Twenty Twelve, use a find and replace
+     * to change 'bayview' to the name of your theme in all the template files.
+     */
+    load_theme_textdomain('bayview', get_template_directory() . '/languages');
+
+// This theme styles the visual editor with editor-style.css to match the theme style.
+    add_editor_style();
+
+// Adds RSS feed links to <head> for posts and comments.
+    add_theme_support('automatic-feed-links');
+
+// This theme supports a variety of post formats.
+    add_theme_support('post-formats', array('aside', 'image', 'link', 'quote', 'status'));
+
+// This theme uses wp_nav_menu() in one location.
+    register_nav_menu('primary', __('Primary Menu', 'bayview'));
+
+    /*
+     * This theme supports custom background color and image, and here
+     * we also set up the default background color.
+     */
+    add_theme_support('custom-background', array(
+        'default-color' => 'e6e6e6',
+    ));
+
+// This theme uses a custom image size for featured images, displayed on "standard" posts.
+    add_theme_support('post-thumbnails');
+    set_post_thumbnail_size(624, 9999); // Unlimited height, soft crop
+    if (function_exists('add_image_size')) {
+        add_image_size('cottage-thumb', 272, 153, true); //300 pixels wide (and unlimited height)
+        add_image_size('cottage-slider-thumb', 104, 104, true); //300 pixels wide (and unlimited height)
+        add_image_size('cottage-slider-img', 668, 250, true); //300 pixels wide (and unlimited height)
+        add_image_size('offer-thumb', 160, 116, true);
+        add_image_size('checkout-page', 100, 90, true);
+        add_image_size('thumbnail_addons', 150, 125, true);
+    }
+}
+
+add_action('after_setup_theme', 'bayview_setup');
+
+/**
+ * Adds support for a custom header image.
+ */
+require( get_template_directory() . '/inc/custom-header.php' );
+
+/**
+ * Enqueues scripts and styles for front-end.
+ *
+ * @since Twenty Twelve 1.0
+ */
+function bayview_scripts_styles() {
+    global $wp_styles;
+
+
+
+    wp_deregister_script('jquery_1_4_2');
+
+    wp_deregister_script('jquery-easing');
+    wp_deregister_script('jquery-sweet-menu');
+    wp_register_script('jquery_1_4_2', get_template_directory_uri() . '/css/jquery-1.4.2.min.js');
+    wp_register_script('jquery-easing', get_template_directory_uri() . '/css/jquery.easing.js', array('jquery_1_4_2'));
+    wp_register_script('jquery-sweet-menu', get_template_directory_uri() . '/css/jquery.sweet-menu-1.0.js', array('jquery_1_4_2', 'jquery-easing'));
+
+    wp_deregister_script('jquery_1_8_2');
+    wp_deregister_script('jquery-ui');
+    wp_deregister_script('jquery-ui-tabs');
+    wp_register_script('jquery_1_8_2', get_template_directory_uri() . '/js/jquery-1.8.2.js');
+    wp_register_script('jquery-ui', get_template_directory_uri() . '/js/jquery-ui-1.9.2.custom.min.js', array('jquery_1_8_2'));
+    wp_register_script('jquery-ui-tabs', get_template_directory_uri() . '/js/jquery-ui-tabs-rotate.js', array('jquery-ui'));
+
+
+
+
+    wp_enqueue_style('jquery-ui', get_template_directory_uri() . '/css/jquery-ui/smoothness/jquery-ui-1.9.2.custom.min.css');
+    wp_enqueue_style('flex-slider', get_template_directory_uri() . '/js/flexslider.css');
+
+
+    wp_enqueue_script('jquery-sweet-menu');
+    wp_enqueue_script('jquery-ui-tabs');
+
+    wp_enqueue_script('flex-slider', get_template_directory_uri() . '/js/jquery.flexslider.js');
+    wp_enqueue_script('jquery-payment', get_template_directory_uri() . '/js/jquery.payment.js');
+
+
+
+
+
+
+    /*
+     * Adds JavaScript to pages with the comment form to support
+     * sites with threaded comments (when in use).
+     */
+    if (is_singular() && comments_open() && get_option('thread_comments'))
+        wp_enqueue_script('comment-reply');
+
+    /*
+     * Adds JavaScript for handling the navigation menu hide-and-show behavior.
+     */
+    wp_enqueue_script('bayview-navigation', get_template_directory_uri() . '/js/navigation.js', array(), '1.0', true);
+
+    /*
+     * Loads our special font CSS file.
+     *
+     * The use of Open Sans by default is localized. For languages that use
+     * characters not supported by the font, the font can be disabled.
+     *
+     * To disable in a child theme, use wp_dequeue_style()
+     * function mytheme_dequeue_fonts() {
+     *     wp_dequeue_style( 'bayview-fonts' );
+     * }
+     * add_action( 'wp_enqueue_scripts', 'mytheme_dequeue_fonts', 11 );
+     */
+
+    /* translators: If there are characters in your language that are not supported
+      by Open Sans, translate this to 'off'. Do not translate into your own language. */
+    if ('off' !== _x('on', 'Open Sans font: on or off', 'bayview')) {
+        $subsets = 'latin,latin-ext';
+
+        /* translators: To add an additional Open Sans character subset specific to your language, translate
+          this to 'greek', 'cyrillic' or 'vietnamese'. Do not translate into your own language. */
+        $subset = _x('no-subset', 'Open Sans font: add new subset (greek, cyrillic, vietnamese)', 'bayview');
+
+        if ('cyrillic' == $subset)
+            $subsets .= ',cyrillic,cyrillic-ext';
+        elseif ('greek' == $subset)
+            $subsets .= ',greek,greek-ext';
+        elseif ('vietnamese' == $subset)
+            $subsets .= ',vietnamese';
+
+        $protocol = is_ssl() ? 'https' : 'http';
+        $query_args = array(
+            'family' => 'Open+Sans:400italic,700italic,400,700',
+            'subset' => $subsets,
+        );
+        wp_enqueue_style('bayview-fonts', add_query_arg($query_args, "$protocol://fonts.googleapis.com/css"), array(), null);
+    }
+
+    /*
+     * Loads our main stylesheet.
+     */
+    wp_enqueue_style('bayview-style', get_stylesheet_uri());
+
+    /*
+     * Loads the Internet Explorer specific stylesheet.
+     */
+    wp_enqueue_style('bayview-ie', get_template_directory_uri() . '/css/ie.css', array('bayview-style'), '20121010');
+    $wp_styles->add_data('bayview-ie', 'conditional', 'lt IE 9');
+}
+
+add_action('wp_enqueue_scripts', 'bayview_scripts_styles');
+
+wp_enqueue_style('thickbox');
+wp_deregister_script('jquery');
+wp_enqueue_script('thickbox');
+
+/**
+ * Creates a nicely formatted and more specific title element text
+ * for output in head of document, based on current view.
+ *
+ * @since Twenty Twelve 1.0
+ *
+ * @param string $title Default title text for current view.
+ * @param string $sep Optional separator.
+ * @return string Filtered title.
+ */
+function bayview_wp_title($title, $sep) {
+    global $paged, $page;
+
+    if (is_feed())
+        return $title;
+
+// Add the site name.
+    $title .= get_bloginfo('name');
+
+// Add the site description for the home/front page.
+    $site_description = get_bloginfo('description', 'display');
+    if ($site_description && ( is_home() || is_front_page() ))
+        $title = "$title $sep $site_description";
+
+// Add a page number if necessary.
+    if ($paged >= 2 || $page >= 2)
+        $title = "$title $sep " . sprintf(__('Page %s', 'bayview'), max($paged, $page));
+
+    return $title;
+}
+
+add_filter('wp_title', 'bayview_wp_title', 10, 2);
+
+/**
+ * Makes our wp_nav_menu() fallback -- wp_page_menu() -- show a home link.
+ *
+ * @since Twenty Twelve 1.0
+ */
+function bayview_page_menu_args($args) {
+    if (!isset($args['show_home']))
+        $args['show_home'] = true;
+    return $args;
+}
+
+add_filter('wp_page_menu_args', 'bayview_page_menu_args');
+
+/**
+ * Registers our main widget area and the front page widget areas.
+ *
+ * @since Twenty Twelve 1.0
+ */
+function bayview_widgets_init() {
+
+    register_sidebar(array(
+        'name' => __('Home page sidebar', 'bayview'),
+        'id' => 'sidebar-home-page',
+        'description' => __('Appears on home page at top position at with own widgets', 'bayview'),
+        'before_widget' => '<aside id="%1$s" class="widget %2$s">',
+        'after_widget' => '</aside><br/><br/>',
+        'before_title' => '<div class="br-mid-title"><div class="twitter-tag">',
+        'after_title' => '</div></div>',
+    ));
+
+    register_sidebar(array(
+        'name' => __('Main Sidebar', 'bayview'),
+        'id' => 'sidebar-1',
+        'description' => __('Appears on posts and pages except the optional Front Page template, which has its own widgets', 'bayview'),
+        'before_widget' => '<aside id="%1$s" class="widget %2$s">',
+        'after_widget' => '</aside><br/><br/>',
+        'before_title' => '<h1>',
+        'after_title' => '</h1><hr/><br/>',
+    ));
+
+    register_sidebar(array(
+        'name' => __('GuestBook', 'bayview'),
+        'id' => 'sidebar-2',
+        'description' => __('Used for showing guestbook widget', 'bayview'),
+        'before_widget' => '<aside id="%1$s" class="widget %2$s">',
+        'after_widget' => '</aside>',
+        'before_title' => '<a href="' . home_url("guest-book") . '"><h1>',
+        'after_title' => '</h1></a>',
+    ));
+
+    register_sidebar(array(
+        'name' => __('Second Front Page Widget Area', 'bayview'),
+        'id' => 'sidebar-3',
+        'description' => __('Appears when using the optional Front Page template with a page set as Static Front Page', 'bayview'),
+        'before_widget' => '<aside id="%1$s" class="widget %2$s">',
+        'after_widget' => '</aside>',
+        'before_title' => '<h3 class="widget-title">',
+        'after_title' => '</h3>',
+    ));
+    register_sidebar(array(
+        'name' => __('single Cotage Widget Area', 'bayview'),
+        'id' => 'sidebar-4',
+        'description' => __('Appears on single display cotage..', 'bayview'),
+        'before_widget' => '<aside id="%1$s" class="widget %2$s">',
+        'after_widget' => '</aside>',
+        'before_title' => '<h3 class="widget-title">',
+        'after_title' => '</h3>',
+    ));
+}
+
+add_action('widgets_init', 'bayview_widgets_init');
+
+if (!function_exists('bayview_content_nav')) :
+
+    /**
+     * Displays navigation to next/previous pages when applicable.
+     *
+     * @since Twenty Twelve 1.0
+     */
+    function bayview_content_nav($html_id) {
+        global $wp_query;
+
+        $html_id = esc_attr($html_id);
+
+        if ($wp_query->max_num_pages > 1) :
+            ?>
+            <nav id="<?php echo $html_id; ?>" class="navigation" role="navigation">
+                <h3 class="assistive-text"><?php _e('Post navigation', 'bayview'); ?></h3>
+                <div class="nav-previous alignleft"><?php next_posts_link(__('<span class="meta-nav">&larr;</span> Older posts', 'bayview')); ?></div>
+                <div class="nav-next alignright"><?php previous_posts_link(__('Newer posts <span class="meta-nav">&rarr;</span>', 'bayview')); ?></div>
+            </nav><!-- #<?php echo $html_id; ?> .navigation -->
+            <?php
+        endif;
+    }
+
+endif;
+
+if (!function_exists('bayview_comment')) :
+
+    /**
+     * Template for comments and pingbacks.
+     *
+     * To override this walker in a child theme without modifying the comments template
+     * simply create your own bayview_comment(), and that function will be used instead.
+     *
+     * Used as a callback by wp_list_comments() for displaying the comments.
+     *
+     * @since Twenty Twelve 1.0
+     */
+    function bayview_comment($comment, $args, $depth) {
+        $GLOBALS['comment'] = $comment;
+        switch ($comment->comment_type) :
+            case 'pingback' :
+            case 'trackback' :
+// Display trackbacks differently than normal comments.
+                ?>
+                <li <?php comment_class(); ?> id="comment-<?php comment_ID(); ?>">
+                    <p><?php _e('Pingback:', 'bayview'); ?> <?php comment_author_link(); ?> <?php edit_comment_link(__('(Edit)', 'bayview'), '<span class="edit-link">', '</span>'); ?></p>
+                    <?php
+                    break;
+                default :
+                    // Proceed with normal comments.
+                    global $post;
+                    ?>
+                <li <?php comment_class(); ?> id="li-comment-<?php comment_ID(); ?>">
+                    <article id="comment-<?php comment_ID(); ?>" class="comment">
+                        <header class="comment-meta comment-author vcard">
+                            <?php
+                            echo get_avatar($comment, 44);
+                            printf('<cite class="fn">%1$s %2$s</cite>', get_comment_author_link(),
+                                    // If current post author is also comment author, make it known visually.
+                                    ( $comment->user_id === $post->post_author ) ? '<span> ' . __('Post author', 'bayview') . '</span>' : ''
+                            );
+                            printf('<a href="%1$s"><time datetime="%2$s">%3$s</time></a>', esc_url(get_comment_link($comment->comment_ID)), get_comment_time('c'),
+                                    /* translators: 1: date, 2: time */ sprintf(__('%1$s at %2$s', 'bayview'), get_comment_date(), get_comment_time())
+                            );
+                            ?>
+                        </header><!-- .comment-meta -->
+
+                        <?php if ('0' == $comment->comment_approved) : ?>
+                            <p class="comment-awaiting-moderation"><?php _e('Your comment is awaiting moderation.', 'bayview'); ?></p>
+                        <?php endif; ?>
+
+                        <section class="comment-content comment">
+                            <?php comment_text(); ?>
+                            <?php edit_comment_link(__('Edit', 'bayview'), '<p class="edit-link">', '</p>'); ?>
+                        </section><!-- .comment-content -->
+
+                        <div class="reply">
+                            <?php comment_reply_link(array_merge($args, array('reply_text' => __('Reply', 'bayview'), 'after' => ' <span>&darr;</span>', 'depth' => $depth, 'max_depth' => $args['max_depth']))); ?>
+                        </div><!-- .reply -->
+                    </article><!-- #comment-## -->
+                    <?php
+                    break;
+            endswitch; // end comment_type check
+        }
+
+    endif;
+
+    if (!function_exists('bayview_entry_meta')) :
+
+        /**
+         * Prints HTML with meta information for current post: categories, tags, permalink, author, and date.
+         *
+         * Create your own bayview_entry_meta() to override in a child theme.
+         *
+         * @since Twenty Twelve 1.0
+         */
+        function bayview_entry_meta() {
+            // Translators: used between list items, there is a space after the comma.
+            $categories_list = get_the_category_list(__(', ', 'bayview'));
+
+            // Translators: used between list items, there is a space after the comma.
+            $tag_list = get_the_tag_list('', __(', ', 'bayview'));
+
+            $date = sprintf('<a href="%1$s" title="%2$s" rel="bookmark"><time class="entry-date" datetime="%3$s">%4$s</time></a>', esc_url(get_permalink()), esc_attr(get_the_time()), esc_attr(get_the_date('c')), esc_html(get_the_date())
+            );
+
+            $author = sprintf('<span class="author vcard"><a class="url fn n" href="%1$s" title="%2$s" rel="author">%3$s</a></span>', esc_url(get_author_posts_url(get_the_author_meta('ID'))), esc_attr(sprintf(__('View all posts by %s', 'bayview'), get_the_author())), get_the_author()
+            );
+
+            // Translators: 1 is category, 2 is tag, 3 is the date and 4 is the author's name.
+            if ($tag_list) {
+                $utility_text = __('This entry was posted in %1$s and tagged %2$s on %3$s<span class="by-author"> by %4$s</span>.', 'bayview');
+            } elseif ($categories_list) {
+                $utility_text = __('This entry was posted in %1$s on %3$s<span class="by-author"> by %4$s</span>.', 'bayview');
+            } else {
+                $utility_text = __('This entry was posted on %3$s<span class="by-author"> by %4$s</span>.', 'bayview');
+            }
+
+            printf(
+                    $utility_text, $categories_list, $tag_list, $date, $author
+            );
+        }
+
+    endif;
+
+    /**
+     * Extends the default WordPress body class to denote:
+     * 1. Using a full-width layout, when no active widgets in the sidebar
+     *    or full-width template.
+     * 2. Front Page template: thumbnail in use and number of sidebars for
+     *    widget areas.
+     * 3. White or empty background color to change the layout and spacing.
+     * 4. Custom fonts enabled.
+     * 5. Single or multiple authors.
+     *
+     * @since Twenty Twelve 1.0
+     *
+     * @param array Existing class values.
+     * @return array Filtered class values.
+     */
+    function bayview_body_class($classes) {
+        $background_color = get_background_color();
+
+        if (!is_active_sidebar('sidebar-1') || is_page_template('page-templates/full-width.php'))
+            $classes[] = 'full-width';
+
+        if (is_page_template('page-templates/front-page.php')) {
+            $classes[] = 'template-front-page';
+            if (has_post_thumbnail())
+                $classes[] = 'has-post-thumbnail';
+            if (is_active_sidebar('sidebar-2') && is_active_sidebar('sidebar-3'))
+                $classes[] = 'two-sidebars';
+        }
+
+        if (empty($background_color))
+            $classes[] = 'custom-background-empty';
+        elseif (in_array($background_color, array('fff', 'ffffff')))
+            $classes[] = 'custom-background-white';
+
+        // Enable custom font class only if the font CSS is queued to load.
+        if (wp_style_is('bayview-fonts', 'queue'))
+            $classes[] = 'custom-font-enabled';
+
+        if (!is_multi_author())
+            $classes[] = 'single-author';
+
+        return $classes;
+    }
+
+    add_filter('body_class', 'bayview_body_class');
+
+    /**
+     * Adjusts content_width value for full-width and single image attachment
+     * templates, and when there are no active widgets in the sidebar.
+     *
+     * @since Twenty Twelve 1.0
+     */
+    function bayview_content_width() {
+        if (is_page_template('page-templates/full-width.php') || is_attachment() || !is_active_sidebar('sidebar-1')) {
+            global $content_width;
+            $content_width = 960;
+        }
+    }
+
+    add_action('template_redirect', 'bayview_content_width');
+
+    /**
+     * Add postMessage support for site title and description for the Theme Customizer.
+     *
+     * @since Twenty Twelve 1.0
+     *
+     * @param WP_Customize_Manager $wp_customize Theme Customizer object.
+     * @return void
+     */
+    function bayview_customize_register($wp_customize) {
+        $wp_customize->get_setting('blogname')->transport = 'postMessage';
+        $wp_customize->get_setting('blogdescription')->transport = 'postMessage';
+    }
+
+    add_action('customize_register', 'bayview_customize_register');
+
+    /**
+     * Binds JS handlers to make Theme Customizer preview reload changes asynchronously.
+     *
+     * @since Twenty Twelve 1.0
+     */
+    function bayview_customize_preview_js() {
+        wp_enqueue_script('bayview-customizer', get_template_directory_uri() . '/js/theme-customizer.js', array('customize-preview'), '20120827', true);
+    }
+
+    add_action('customize_preview_init', 'bayview_customize_preview_js');
+
+    function get_cart_detail($field = null, $field_value = null) {
+        $cart_data = $_SESSION['data_for_cart'];
+        $data = array();
+        if (!empty($cart_data)) {
+            if ($field != '' && $field_value != '') {
+                foreach ((array) $cart_data as $key => $value) {
+                    if ($value[$field] == $field_value) {
+                        $data = $cart_data[$key];
+                        return $data;
+                    }
+                }
+            } else {
+                return $cart_data;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    function get_cart_offer($field = null, $field_value = null) {
+        $cart_data = $_SESSION['cart_offer_data'];
+        $data = array();
+        if (!empty($cart_data)) {
+            if ($field != '' && $field_value != '') {
+                foreach ((array) $cart_data as $key => $value) {
+                    if ($value[$field] == $field_value) {
+                        $data = $cart_data[$key];
+                        return $data;
+                    }
+                }
+            } else {
+                return $cart_data;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    function bayview_table_create($oldname, $oldtheme = false) {
+        global $wpdb, $table_prefix;
+
+
+        $table_name = $table_prefix . 'bookinglog'; /* !imix_event_meta */
+        $database_template[$table_name]['columns']['ID'] = "bigint(20) NOT NULL auto_increment";
+        $database_template[$table_name]['columns']['cottage_id'] = "bigint(20) NOT NULL default '0'";
+        $database_template[$table_name]['columns']['user_id'] = "bigint(20) NOT NULL default '0'";
+        $database_template[$table_name]['columns']['p_id'] = "bigint(20) NOT NULL default '0'";
+        $database_template[$table_name]['columns']['cottage_total'] = "decimal(11,2) NOT NULL DEFAULT '0' ";
+        $database_template[$table_name]['columns']['addons'] = "longtext";
+        $database_template[$table_name]['columns']['cottage_arrival_date'] = "longtext";
+        $database_template[$table_name]['columns']['cottage_departure_date'] = "longtext";
+        $database_template[$table_name]['columns']['cottage_status'] = "tinyint";
+        $database_template[$table_name]['columns']['people'] = "int(11) NOT NULL default '0' ";
+        $database_template[$table_name]['indexes']['PRIMARY'] = "PRIMARY KEY  (`ID`)";
+
+        $table_name = $table_prefix . 'payment'; /* !imix_event_meta */
+        $database_template[$table_name]['columns']['ID'] = "bigint(20) NOT NULL auto_increment";
+        $database_template[$table_name]['columns']['user_id'] = "bigint(20) NOT NULL default '0'";
+        $database_template[$table_name]['columns']['fname'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['lname'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['address1'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['address2'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['country'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['postal_code'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['city'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['state'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['mobile_phone'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['alt_phone'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['card_type'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['card_number'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['card_exp'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['card_security'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['card_name'] = "varchar(255) NOT NULL DEFAULT '' ";
+        $database_template[$table_name]['columns']['gross_total'] = "decimal(11,2) NOT NULL DEFAULT '0' ";
+        $database_template[$table_name]['columns']['gross_total'] = "decimal(11,2) NOT NULL DEFAULT '0' ";
+        $database_template[$table_name]['columns']['created'] = "datetime NOT NULL DEFAULT '0000-00-00 00:00:00' ";
+        $database_template[$table_name]['indexes']['PRIMARY'] = "PRIMARY KEY  (`ID`)";
+
+
+        $failure_reasons = array();
+        $upgrade_failed = false;
+        foreach ((array) $database_template as $table_name => $table_data) {
+            // check that the table does not exist under the correct name, then checkk if there was a previous name, if there was, check for the table under that name too.
+            if (!$wpdb->get_var("SHOW TABLES LIKE '$table_name'") && (!isset($table_data['previous_names']) || (isset($table_data['previous_names']) && !$wpdb->get_var("SHOW TABLES LIKE '{$table_data['previous_names']}'")) )) {
+                //if the table does not exixt, create the table
+                $constructed_sql_parts = array();
+                $constructed_sql = "CREATE TABLE `{$table_name}` (\n";
+
+                // loop through the columns
+                foreach ((array) $table_data['columns'] as $column => $properties) {
+                    $constructed_sql_parts[] = "`$column` $properties";
+                }
+                // then through the indexes
+                foreach ((array) $table_data['indexes'] as $properties) {
+                    $constructed_sql_parts[] = "$properties";
+                }
+                $constructed_sql .= implode(",\n", $constructed_sql_parts);
+                $constructed_sql .= "\n) ENGINE=MyISAM";
+
+
+                // if mySQL is new enough, set the character encoding
+                if (method_exists($wpdb, 'db_version') && version_compare($wpdb->db_version(), '4.1', '>=')) {
+                    $constructed_sql .= " CHARSET=utf8";
+                }
+                $constructed_sql .= ";";
+
+                if (!$wpdb->query($constructed_sql)) {
+                    $upgrade_failed = true;
+                    $failure_reasons[] = $wpdb->last_error;
+                }
+
+                if (isset($table_data['actions']['after']['all']) && is_callable($table_data['actions']['after']['all'])) {
+                    $table_data['actions']['after']['all']();
+                }
+            } else {
+                //check to see if the table needs updating
+                $existing_table_columns = array();
+                //check and possibly update the character encoding
+                if (method_exists($wpdb, 'db_version') && version_compare($wpdb->db_version(), '4.1', '>=')) {
+                    $table_status_data = $wpdb->get_row("SHOW TABLE STATUS LIKE '$table_name'", ARRAY_A);
+                    if ($table_status_data['Collation'] != 'utf8_general_ci') {
+                        $wpdb->query("ALTER TABLE `$table_name`	DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci");
+                    }
+                }
+
+                if (isset($table_data['actions']['before']['all']) && is_callable($table_data['actions']['before']['all'])) {
+                    $table_data['actions']['before']['all']();
+                }
+                //get the column list
+                $existing_table_column_data = $wpdb->get_results("SHOW FULL COLUMNS FROM `$table_name`", ARRAY_A);
+
+                foreach ((array) $existing_table_column_data as $existing_table_column) {
+                    $column_name = $existing_table_column['Field'];
+                    $existing_table_columns[] = $column_name;
+
+                    $null_match = false;
+                    if ($existing_table_column['Null'] = 'NO') {
+                        if (isset($table_data['columns'][$column_name]) && stristr($table_data['columns'][$column_name], "NOT NULL") !== false) {
+                            $null_match = true;
+                        }
+                    } else {
+                        if (isset($table_data['columns'][$column_name]) && stristr($table_data['columns'][$column_name], "NOT NULL") === false) {
+                            $null_match = true;
+                        }
+                    }
+
+                    if (isset($table_data['columns'][$column_name]) && ((stristr($table_data['columns'][$column_name], $existing_table_column['Type']) === false) || ($null_match != true))) {
+                        if (isset($table_data['actions']['before'][$column_name]) && is_callable($table_data['actions']['before'][$column_name])) {
+                            $table_data['actions']['before'][$column_name]($column_name);
+                        }
+                        if (!$wpdb->query("ALTER TABLE `$table_name` CHANGE `$column_name` `$column_name` {$table_data['columns'][$column_name]} ")) {
+                            $upgrade_failed = true;
+                            $failure_reasons[] = $wpdb->last_error;
+                        }
+                    }
+                }
+                $supplied_table_columns = array_keys($table_data['columns']);
+
+                // compare the supplied and existing columns to find the differences
+                $missing_or_extra_table_columns = array_diff($supplied_table_columns, $existing_table_columns);
+
+                if (count($missing_or_extra_table_columns) > 0) {
+                    foreach ((array) $missing_or_extra_table_columns as $missing_or_extra_table_column) {
+                        if (isset($table_data['columns'][$missing_or_extra_table_column])) {
+                            //table column is missing, add it
+                            $index = array_search($missing_or_extra_table_column, $supplied_table_columns) - 1;
+
+                            $previous_column = isset($supplied_table_columns[$index]) ? $supplied_table_columns[$index] : '';
+                            if ($previous_column != '') {
+                                $previous_column = "AFTER `$previous_column`";
+                            }
+                            $constructed_sql = "ALTER TABLE `$table_name` ADD `$missing_or_extra_table_column` " . $table_data['columns'][$missing_or_extra_table_column] . " $previous_column;";
+                            if (!$wpdb->query($constructed_sql)) {
+                                $upgrade_failed = true;
+                                $failure_reasons[] = $wpdb->last_error;
+                            }
+                            // run updating functions to do more complex work with default values and the like
+                            if (isset($table_data['actions']['after'][$missing_or_extra_table_column]) && is_callable($table_data['actions']['after'][$missing_or_extra_table_column])) {
+                                $table_data['actions']['after'][$missing_or_extra_table_column]($missing_or_extra_table_column);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    add_action("after_switch_theme", "bayview_table_create", 10, 2);
+
+    function searchfilter($query) {
+        if ($query->is_search && !is_admin()) {
+            //$query->set('post_type',array('post'));
+        }
+
+        return $query;
+    }
+
+    add_filter('pre_get_posts', 'searchfilter');
+
+    add_action('edit_user_profile', 'add_extra_profile_fields');
+    add_action('show_user_profile', 'add_extra_profile_fields');
+
+    function add_extra_profile_fields($user) {
+        global $wpdb;
+        // add extra profile fields to user edit page 
+        $usermetas = get_user_meta($user->ID);
+        ?>
+        <script type="text/javascript">
+            function get_country_state(select){
+                var id = select.value;
+                jQuery.post('<?php echo admin_url('admin-ajax.php'); ?>', {'action': 'bayview_profile_country_states', 'country_id': id}, function(data) {
+                    jQuery('div.country_state').html(data);
+                });
+                //               
+            }
+        </script>
+        <table class="form-table">
+            <tr>
+                <th><lable>Address 1</lable></th>
+        <td><input type="text" name="addr1" id="addr1" value="<?php echo $usermetas['addr1'][0]; ?>" required="required"/></td>
+    </tr>
+    <tr>
+        <th><lable>Address 2</lable></th>
+    <td><input type="text" name="addr2" id="addr2" value="<?php echo $usermetas['addr2'][0]; ?>" required="required"/></td>
+    </tr>
+    <tr>
+        <th><lable>Country</lable></th>
+    <td><?php
+    $query = "SELECT * FROM `{$wpdb->prefix}bayview_country` ORDER BY name";
+    $country = $wpdb->get_results($query);
+        ?>
+        <select class="select-style" name="select_country" onchange="get_country_state(this);">
+            <?php
+            foreach ((array) $country as $ctry) {
+                $ctry_selected = '';
+                $country_id = ($usermetas['country'][0] ? $usermetas['country'][0] : 38);
+                if ($ctry->country_id == $country_id) {
+                    $ctry_selected = 'selected="selected"';
+                }
+                echo '<option value="' . $ctry->country_id . '" ' . $ctry_selected . '>' . $ctry->name . '</option>';
+            }
+            ?>
+        </select>
+    </td>
+    </tr>
+    <tr>
+        <th><lable>State</lable></th>
+    <td>
+        <div class="col-3 country_state">
+            <?php
+            $query_state = "SELECT * FROM `{$wpdb->prefix}bayview_zone` WHERE `country_id`=$country_id";
+
+            $country_state = $wpdb->get_results($query_state);
+            ?>
+            <select class="select-style1" name="select_state">
+                <?php
+                foreach ((array) $country_state as $state) {
+                    $state_selected = '';
+                    $state_name = ($usermetas['state'][0] ? $usermetas['state'][0] : 'Ontario');
+                    if ($state->name == $state_name) {
+                        $state_selected = 'selected="selected"';
+                    }
+                    echo '<option value="' . $state->name . '"' . $state_selected . '>' . $state->name . '</option>';
+                }
+                ?>
+            </select>
+        </div>
+    </td>
+    </tr>
+    <tr>
+        <th><lable>City</lable></th>
+    <td><input type="text" name="city" id="city" value="<?php echo $usermetas['city'][0]; ?>" required="required"/></td>
+    </tr>
+    <tr>
+        <th><lable>Postal Code</lable></th>
+    <td><input type="text" name="postcode" id="postcode" value="<?php echo $usermetas['postcode'][0]; ?>" required="required"/></td>
+    </tr>
+    <tr>
+        <th><lable>Mobile Phone</lable></th>
+    <td><input type="text" name="phone" id="phone" value="<?php echo $usermetas['phone'][0]; ?>" required="required"/></td>
+    </tr>
+    <tr>
+        <th><lable>Alternate Phone</lable></th>
+    <td><input type="text" name="alt_phone" id="alt_phone" value="<?php echo $usermetas['alt_phone'][0]; ?>" required="required"/></td>
+    </tr>
+
+    </table>
+
+    <?php
+}
+
+add_action('personal_options_update', 'my_save_extra_profile_fields');
+add_action('edit_user_profile_update', 'my_save_extra_profile_fields');
+
+function my_save_extra_profile_fields($user_id) {
+    if (!current_user_can('edit_user', $user_id))
+        return false;
+    update_user_meta($user_id, 'addr1', $_POST['addr1']);
+    update_user_meta($user_id, 'addr2', $_POST['addr2']);
+    update_user_meta($user_id, 'country', $_POST['select_country']);
+    update_user_meta($user_id, 'postcode', $_POST['postcode']);
+    update_user_meta($user_id, 'city', $_POST['city']);
+    update_user_meta($user_id, 'state', $_POST['select_state']);
+    update_user_meta($user_id, 'phone', $_POST['phone']);
+    update_user_meta($user_id, 'alt_phone', $_POST['alt_phone']);
+}
+
+add_action('admin_menu', 'bayview_plugin_menu');
+
+function bayview_plugin_menu() {
+    add_theme_page('Social Links', 'Social Links', 'manage_options', 'bayview_social_links', 'admin_theme_option');
+}
+
+function admin_theme_option() {
+    if (isset($_POST['submit'])) {
+        if (!empty($_POST['bayview_facebook_link'])) {
+            update_option('bayview_facebook_link', $_POST['bayview_facebook_link']);
+        }
+        if (!empty($_POST['bayview_twitter_link'])) {
+            update_option('bayview_twitter_link', $_POST['bayview_twitter_link']);
+        }
+        if (!empty($_POST['bayview_linkedin_link'])) {
+            update_option('bayview_linkedin_link', $_POST['bayview_linkedin_link']);
+        }
+        if (!empty($_POST['bayview_google_link'])) {
+            update_option('bayview_google_link', $_POST['bayview_google_link']);
+        }
+    }
+    $bayview_facebook_link = get_option("bayview_facebook_link", "");
+    $bayview_twitter_link = get_option("bayview_twitter_link", "");
+    $bayview_linkedin_link = get_option("bayview_linkedin_link", "");
+    $bayview_google_link = get_option("bayview_google_link", "");
+    ?>
+    <div class="wrap">
+        <h2>Social Links Settings</h2>
+        <form name="theme_social_links" id="theme_social_links" action="" method="post"> 
+            <div style="width:50%">
+
+                <fieldset style="border: 1px solid #bfbfbf">
+                    <legend>Bayview Setup social links</legend>
+                    <table style="width: 100%">
+                        <tr>
+                            <td>Facebook Link:</td><td align="right"><input type="text" name="bayview_facebook_link" value="<?php echo $bayview_facebook_link; ?>" size="40"/></td>
+                        </tr>
+                        <tr>
+                            <td>Twitter Link:</td><td align="right"><input type="text" name="bayview_twitter_link" value="<?php echo $bayview_twitter_link; ?>" size="40"/></td>
+                        </tr>
+                        <tr>
+                            <td>Linked-in Link:</td><td align="right"><input type="text" name="bayview_linkedin_link" value="<?php echo $bayview_linkedin_link; ?>" size="40"/></td>
+                        </tr>
+                        <tr>
+                            <td>Google Link:</td><td align="right"><input type="text" name="bayview_google_link" value="<?php echo $bayview_google_link; ?>" size="40"/></td>
+                        </tr>
+                    </table>
+
+                </fieldset>
+                <br/>
+                <br/>
+            </div>
+            <div class="postbox-container" id="postbox-container-1">
+                <input type="submit" name="submit" class="button button-primary button-large" value="Save"/>
+            </div>
+        </form>
+    </div>
+    <?php
+}
+?>
