@@ -2,20 +2,26 @@
 global $table_prefix;
 if (!empty($_POST['order_placed'])) {
 
-
+	
     $email = $_POST['email'];
 
-    $user = get_user_by('email', $email);
+    if (!empty($email)) {
+        $user = get_user_by('email', $email);
 
-    if ($user === false) {
-        $user_id = wp_create_user($email, "123456", $email);
+        if ($user === false) {
+            $user_id = wp_create_user($email, "123456", $email);
 
-        $user = get_userdata($user_id);
+            $user = get_userdata($user_id);
 
-        my_new_user_notification($user_id, "123456");
+            my_new_user_notification($user_id, "123456");
+        }
+	if(empty($user_id)){
+		$user_id = $user->ID;
+	}
+        $user->add_cap('customer');
     }
 
-    $user->add_cap('customer');
+
 
     $booking_table = $table_prefix . 'bookinglog';
     $payment_table = $table_prefix . 'payment';
@@ -47,9 +53,9 @@ if (!empty($_POST['order_placed'])) {
     $_offers = $_POST['booked_offers'];
     $cottage_price = 0;
     $tax = floatval(get_option('bayview_booking_tax', 0));
-    $service = floatval(get_option("addon_service_charges", 0));
+
     $tax = 1 + ($tax / 100.0);
-    $service = 1 + ($service / 100.0);
+
 
     if (!empty($_cottages)) {
 
@@ -75,8 +81,8 @@ if (!empty($_POST['order_placed'])) {
                 );
             }
         }
-        $addons_price *= $service;
-        
+
+
         $cottages_people = 0;
         foreach ($_cottages as $cottage_people) {
             $cottage_adults = get_post_meta($cottage_people, '_people', true);
@@ -88,82 +94,23 @@ if (!empty($_POST['order_placed'])) {
             die();
         }
         foreach ($_cottages as $cottage) {
-           $cottage_price = $cottage_prices[$cottage] = getCottagePrice($cottage, get_post_meta($cottage, '_nightly_rate', true), $arrival, $departure, true);
-           $gross_total += $cottage_price;
+            $cottage_price = $cottage_prices[$cottage] = getCottagePrice($cottage, 0, $arrival, $departure, true);
+            $gross_total += $cottage_price;
         }
-        $cottage_price *= $tax;
-    } elseif (!empty($_offers)) {
-
-        $offers = array();
-
-        $_offers = explode(',', $_offers);
-
-        foreach ($_offers as $offer) {
-            $meta = get_post_meta($offer);
-
-            $nights = $meta['_nights'][0];
-
-            $departure = date('Y-m-d', strtotime("+$nights days", strtotime($arrival)));
-
-            $_ocottages = $meta['_cottages'][0];
-
-            $_ocottages = explode(',', $_ocottages);
-
-            $ocottages = array();
-            if (!empty($_ocottages)) {
-                $_oc_peoples = 0;
-                foreach ($_ocottages as $_oc_people) {
-                    $_oc_adults = get_post_meta($_oc_people, '_people', true);
-                    $_oc_children = get_post_meta($_oc_people, '_children', true);
-                    $_oc_peoples += $_oc_adults + $_oc_children;
-                }
-                if ($_oc_peoples < $num_people) {
-                    echo '<strong>Number of Persons</strong> is greater than maximum <a href="javascript:history.back()">Go Back</a>';
-                    die();
-                }
-                foreach ($_ocottages as $_oc) {
-                    $cottage_price = $ocottages[$_oc] = getCottagePrice($_oc, get_post_meta($_oc, '_nightly_rate', true), $arrival, $departure, true);
-                     $gross_total += $cottage_price;
-                }
-            }
-
-            $_oaddons = $meta['_addons'];
-
-            $_oaddons = explode(',', $_oaddons);
-
-            $oaddons = array();
-            $oaddons_price = 0;
-            if (!empty($_oaddons)) {
-                foreach ($_oaddons as $_oaddon) {
-                    list($oaid, $oaqnty) = explode('|', $_oaddon);
-                    $gross_total += $price = $oaqnty * get_post_meta($oaid, '_price', true);
-                    $oaddons_price += $price;
-                    $oaddons[] = array(
-                        'package_id' => $oaid,
-                        'package_name' => get_the_title($oaid),
-                        'package_quantity' => $oaqnty,
-                        'package_price' => $price
-                    );
-                }
-            }
-
-            $offers[] = array("cottages" => $ocottages, "addons" => $oaddons, "addons_price" => $oaddons_price);
-        }
+        //$cottage_price *= $tax;
     } else {
         echo "Nothing Selected for booking, please go back and try again!";
     }
 
-    if (!empty($offers) || !empty($cottage_prices)) {
-
-        if (!empty($user)) {
+    if (!empty($cottage_prices)) {
 
             //$gross_total *= $tax;
-            
+
             $gross_total = $addons_price + $cottage_price;
 
             $inserted = $wpdb->insert(
                     $payment_table, array(
-                'user_id' => $user_id,
+                'user_id' => (int)(!empty($user_id)? $user_id : 0),
                 'fname' => $fname,
                 'lname' => $fname,
                 'address1' => $address1,
@@ -208,7 +155,7 @@ if (!empty($_POST['order_placed'])) {
             $last_booking_id = $payinfo_id = $wpdb->insert_id;
 
             if (!empty($cottage_prices)) {
-
+                $booking_id = 0;
                 $addons_added = false;
 
                 $arrival_date = date('Y-m-d', strtotime($arrival));
@@ -222,50 +169,19 @@ if (!empty($_POST['order_placed'])) {
                     if (!$addons_added && !empty($addons)) {
                         $addons = json_encode($addons);
 
-                        $query = "INSERT INTO `" . $booking_table . "` (cottage_id,user_id,p_id,cottage_total,addons,cottage_arrival_date,cottage_departure_date,cottage_status,people) VALUES ($cottage_id, $user->ID, $payinfo_id, '" . (($cottage_price * $tax) + ($addons_price)) . "', '$addons', '$arrival_date', '$departure_date', 1, '$people')";
+                        $query = "INSERT INTO `" . $booking_table . "` (cottage_id,user_id,p_id,cottage_total,addons,cottage_arrival_date,cottage_departure_date,cottage_status,people) VALUES ($cottage_id,".(!empty($user_id)? $user_id : 0).", $payinfo_id, '" . (($cottage_price + $addons_price) * $tax) . "', '$addons', '$arrival_date', '$departure_date', 1, '$num_people')";
                         $addons_added = true;
                     } else {
-                        $query = "INSERT INTO `" . $booking_table . "` (cottage_id,user_id,p_id,cottage_total,addons,cottage_arrival_date,cottage_departure_date,cottage_status,people) VALUES ($cottage_id, $user->ID, $payinfo_id, '" . $cottage_price * $tax . "', '', '$arrival_date', '$departure_date', 1, '$people')";
+                        $query = "INSERT INTO `" . $booking_table . "` (cottage_id,user_id,p_id,cottage_total,addons,cottage_arrival_date,cottage_departure_date,cottage_status,people) VALUES ($cottage_id,". (!empty($user_id)? $user_id : 0).", $payinfo_id, '" . ($cottage_price * $tax) . "', '', '$arrival_date', '$departure_date', 1, '$num_people')";
                     }
                     $wpdb->query($query);
-                }
-                send_booking_email_notification($user->ID);
-
-                echo "Successfully booked!";
-            } elseif (!empty($offers)) {
-                foreach ($offers as $offer) {
-                    $cottage_prices = $offer['cottages'];
-                    $addons = $offer['addons'];
-                    $addons_price = $offer['addons_price'];
-                    if (!empty($cottage_prices)) {
-
-                        $addons_added = false;
-
-                        $arrival_date = date('Y-m-d', strtotime($arrival));
-                        $departure_date = date('Y-m-d', strtotime($departure));
-
-                        foreach ($cottage_prices as $cottage_id => $cottage_price) {
-                            $adults = get_post_meta($cottage_id, '_people', true);
-                            $children = get_post_meta($cottage_id, '_children', true);
-                            $people = $adults + $children;
-                            if (!$addons_added && !empty($addons)) {
-                                $addons = json_encode($addons);
-
-                                $query = "INSERT INTO `" . $booking_table . "` (cottage_id,user_id,p_id,cottage_total,addons,cottage_arrival_date,cottage_departure_date,cottage_status,people) VALUES ($cottage_id, $user->ID, $payinfo_id, '" . ($cottage_price + $addons_price) . "', '$addons', '$arrival_date', '$depature_date', 1, '$people')";
-                                $addons_added = true;
-                            } else {
-                                $query = "INSERT INTO `" . $booking_table . "` (cottage_id,user_id,p_id,cottage_total,addons,cottage_arrival_date,cottage_departure_date,cottage_status,people) VALUES ($cottage_id, $user->ID, $payinfo_id, '" . $cottage_price * $tax . "', '', '$arrival_date', '$depature_date', 1, '$people')";
-                            }
-                            $wpdb->query($query);
-                        }
+                    $booking_id = $wpdb->insert_id;
+                    if (!empty($user->ID)) {
+                        send_offline_email_notification($user->ID, $booking_id);
                     }
                 }
-                send_booking_email_notification($user->ID);
                 echo "Successfully booked!";
             }
-        } else {
-            echo "Couldn't get (or create) user with the specified email id, please go back and try again or contact the system administrator";
-        }
     }
 } else {
     ?>
@@ -364,6 +280,14 @@ if (!empty($_POST['order_placed'])) {
                 <input type="text" class="datepicker required" readonly="true" name="departure_date" id="departure_date" />
 
             </div>
+            <div class="dpt_date">
+
+                <p>Number of Persons</p>
+                <input type="text" value="" class="input-style" id="num_people" name="num_people" style="width:120px;" size="3" />
+
+
+            </div>
+
             <div class="check_cottage"><a href="javascript:void(0)" class="button-primary" onclick="findOffersAndCottages();">Check</a> <a href="javascript:void(0)" class="button-primary" onclick="document.getElementById('date_get').reset();">Clear Dates</a></div>
         </form>
     </div>
@@ -394,13 +318,9 @@ if (!empty($_POST['order_placed'])) {
 
                     </div>
                 </div>
-                <div class="innerrow">
-                    <div class="form" id="existing">
-                        <p>Number of Persons</p>
-                        <input type="text" value="" class="input-style" id="num_people" name="num_people" />
 
-                    </div>
-                </div>
+                <input type="hidden" value="" class="input-style" id="num_people" readonly="enable" name="num_people" />
+
 
 
                 <h1>Billing Information</h1>
@@ -546,33 +466,55 @@ if (!empty($_POST['order_placed'])) {
             //               
         }
         function findOffersAndCottages(){
+            jQuery('input').removeClass('invalid');
+            jQuery('input').css('border-color','#DFDFDF');
             var arrival = jQuery('#arrival_date').val();
             var departure = jQuery('#departure_date').val();
-                                                    
+            var people = jQuery('#num_people').val();
+            if(arrival == ''){
+                jQuery('#arrival_date').addClass('invalid');
+            }
+            if(departure == ''){
+                jQuery('#departure_date').addClass('invalid');
+            }
+            if(isNaN(people) || people== ''){
+                        
+                jQuery('#num_people').addClass('invalid');
+                      
+            }    
+            if(jQuery('input.invalid').length){
+                jQuery('input.invalid').each(function(){
+                    jQuery(this).css('border-color','red');
+                });
+                return false;
+            }
+            jQuery('#billinginfo_form #num_people').val(people);
+                    
             jQuery.post(ajaxurl, {
                 'action': 'bayview_find_offers_and_cottages',
                 'arrival_date':arrival, 
-                'departure_date': departure
+                'departure_date': departure,
+                'people': people
             }, function(r) {
-                                                        
+                                                                    
                 if(r.status == undefined || r.status != 'success'){
                     if(r.msg == undefined) alert("Some error occured, please try again, later!");
                     else alert(r.msg);
                     return;
                 }
-                                                        
+                                                                    
                 if(r.offers != undefined && r.offers.length > 0){
                     jQuery('#offers_div').html("<div class='chk-description'><h1>Available Offers: </h1></div>");
                     for(var i=0; i<r.offers.length; i++){
-                                                                
-                                                                
-                                                                
+                                                                            
+                                                                            
+                                                                            
                         var div = jQuery("<div style='float: left; width: 280px; height: 200px; border: 1px solid #bfbfbf; margin: 2px'></div>");
                         jQuery("<div style='float: left; width: 25px; height: 180px;'><input name='offers[]' type='checkbox' value='"+r.offers[i].id+"' style='margin-top: 85px; cursor: pointer'/></div>").appendTo(div);
                         div.append("<h3>"+r.offers[i].title+"</h3>");
                         div.append(r.offers[i].img);
                         div.append("<span>"+r.offers[i].cottages+"<br/>"+r.offers[i].addons+"</span><br/>");
-                                                                
+                                                                            
                         div.append("<span>Nights: "+r.offers[i].nights+", People: "+r.offers[i].people+", Price: $"+r.offers[i].price+"<br/>Discounted Price: $"+r.offers[i].discounted_price+"<br/>Total Discount: $"+r.offers[i].discount+"</span>");                
                         div.appendTo(jQuery('#offers_div'));
                     }
@@ -582,14 +524,14 @@ if (!empty($_POST['order_placed'])) {
                 if(r.cottages != undefined && r.cottages.length > 0){
                     jQuery('#cottages_div').html("<div class='chk-description'><h1>Available Cottages: </h1></div>");
                     for(var i=0; i<r.cottages.length; i++){
-                                                                
-                                                                
-                                                                
-                        var div = jQuery("<div style='float: left; width: 200px; min-height: 135px; border: 1px solid #bfbfbf; margin: 2px;'></div>");
+                                                                            
+                                                                            
+                                                                            
+                        var div = jQuery("<div style='float: left; width: 215px; min-height: 135px; border: 1px solid #bfbfbf; margin: 2px;'></div>");
                         jQuery("<div style='float: left; width: 25px; height: 130px;'><input name='cottages[]' type='checkbox' value='"+r.cottages[i].id+"' style='margin-top: 60px; cursor: pointer'/></div>").appendTo(div);
                         div.append("<h3>"+r.cottages[i].title+"</h3>");
                         div.append(r.cottages[i].img);
-                                                                
+                                                                            
                         div.append("<span>People: "+r.cottages[i].people+"<br/>Price: $"+r.cottages[i].price+"<br/></span>");
                         if(r.cottages[i].availability != undefined && r.cottages[i].availability > 0) {
                             div.append("<span>Available for only "+r.cottages[i].availability+" nights</span>");
@@ -602,63 +544,63 @@ if (!empty($_POST['order_placed'])) {
                 if(r.addons != undefined && r.addons.length > 0){
                     jQuery('#addons_div').html("<div class='chk-description'><h1>Available Addons: </h1></div>");
                     for(var i=0; i<r.addons.length; i++){
-                                                                
-                                                                
-                                                                
+                                                                            
+                                                                            
+                                                                            
                         var div = jQuery("<div style='float: left; width: 250px; min-height: 110px; border: 1px solid #bfbfbf; margin: 2px;'></div>");
                         jQuery("<div style='float: left; width: 25px; height: 100px;'><input name='addons[]' type='checkbox' value='"+r.addons[i].id+"' style='margin-top: 45px; cursor: pointer'/></div>").appendTo(div);
                         div.append("<h3>"+r.addons[i].title+"</h3>");
                         div.append(r.addons[i].img);
-                                                                
+                                                                            
                         div.append("<span>Price: $"+r.addons[i].price+"<br/>Quantity: <input type='text' name='addon_"+r.addons[i].id+"_quantity' size='2'/></span>");
-                                                                    
+                                                                                
                         div.appendTo(jQuery('#addons_div'));
                     }
                 }else {
                     jQuery('#addons_div').html('&nbsp;');
                 }
             }, "json");
-                                                    
+                                                                
         }
-                                                    
+                                                                
         jQuery(document).ready(function(){
-                                                    
+                                                                
             jQuery('#billinginfo_form').submit(function(){
                 var offers = jQuery('input[name="offers[]"]:checked');
                 var cottages = jQuery('input[name="cottages[]"]:checked');
-                                                            
+                                                                        
                 if((offers == undefined || !offers.length) && (cottages == undefined || !cottages.length)) {
                     alert("Please select atleast a offer or a cottage");
                     return false;
                 }
-                                                            
+                                                                        
                 if((offers != undefined && offers.length) && (cottages != undefined && cottages.length)) {
                     alert("You can only select either from offers or from cottages and addons");
                     return false;
                 }
-                                                            
+                                                                        
                 var booked_offers = "";
-                                                            
+                                                                        
                 if(offers != undefined && offers.length) {
-                                                                
+                                                                            
                     offers.each(function(){
                         booked_offers += jQuery(this).val()+",";
                     });
-                                                                
+                                                                            
                     //                booked_offers = offers[0].value;
                     //                for(var i=1; i < offers.length; i++){
                     //                    booked_offers += ","+offers[i].value;
                     //                }
                 }
-                                                            
+                                                                        
                 if(booked_offers != "") {
                     booked_offers = booked_offers.substring(0, booked_offers.length - 1);
                 }
-                                                            
+                                                                        
                 jQuery('#booked_offers').val(booked_offers);
-                                                            
+                                                                        
                 var booked_cottages = "";
-                                                            
+                                                                        
                 if(cottages != undefined && cottages.length) {
                     if(jQuery('#departure_date').val()==""){
                         alert("Departure date can not be left blank if you are booking cottages!");
@@ -667,24 +609,24 @@ if (!empty($_POST['order_placed'])) {
                     cottages.each(function(){
                         booked_cottages += jQuery(this).val()+",";
                     });
-                                                                
+                                                                            
                     //                booked_cottages = cottages[0].value;
                     //                for(var i=1; i<cottages.length; i++){
                     //                    booked_cottages += ","+cottages[i].value;
                     //                }
                 }
-                                                            
+                                                                        
                 if(booked_cottages != "") {
                     booked_cottages = booked_cottages.substring(0, booked_cottages.length - 1);
                 }
-                                                            
+                                                                        
                 jQuery('#booked_cottages').val(booked_cottages);
-                                                            
-                                                            
+                                                                        
+                                                                        
                 var addons = jQuery('input[name="addons[]"]:checked');
 
                 var booked_addons = "";
-                                                            
+                                                                        
                 if(addons != undefined && addons.length) {
                     var error = "";
                     addons.each(function(){
@@ -701,59 +643,48 @@ if (!empty($_POST['order_placed'])) {
                         return false;
                     }
                 }
-                                                            
+                                                                        
                 if(booked_addons != "") {
                     booked_addons = booked_addons.substring(0, booked_addons.length - 1);
                 }
-                                                            
+                                                                        
                 jQuery('#booked_addons').val(booked_addons);
-                                  
+                                              
                 var pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9-]+\.[a-zA-Z.]{2,4}$/i;
                 var intRegex = /^\d+$/;
                 var charset = /^[a-zA-Z\s]+$/i;
-                                                            
-                if(jQuery('#email').val()=="" || !pattern.test(jQuery('#email').val())) {
-                    alert("Please fill in the email");
-                    return false;
-                }
-                                                            
+                                                                        
                 if(!charset.test(jQuery('#fname').val()) || jQuery('#fname').val() =="") {
                     alert("Please fill in the first name and character only");
                     return false;
                 }
-                                                            
+                                                                        
                 if(!charset.test(jQuery('#lname').val()) || jQuery('#lname').val()=="") {
                     alert("Please fill in the last name and character only");
                     return false;
                 }
-                                                            
+                                                                        
                 if(jQuery('#addr1').val()=="") {
                     alert("Please fill in the address#1");
                     return false;
-                }
-                                                            
-                if(jQuery('#addr2').val()=="") {
-                    alert("Please fill in the address#2");
-                    return false;
-                }
-                                       
-                                
-                                
+                }                                                 
+                                            
+                                            
                 if(jQuery('#pcode').val()=="") {
                     alert("Please fill in the postal code");
                     return false;
                 }
-                                                            
+                                                                        
                 if(jQuery('#city').val()=="" || !charset.test(jQuery('#city').val())) {
                     alert("Please fill in the city and character only");
                     return false;
                 }
-                                     
+                                                 
                 if(!intRegex.test(jQuery('#phone').val()) || jQuery('#phone').val() == ''){
                     alert("Please fill in the phone numeric value");
                     return false;
                 }
-                                       
+                                                   
                 if(!intRegex.test(jQuery('#alt_phone').val()) && jQuery('#alt_phone').val() != ''){
                     alert("Please fill in the alternate phone numeric value");
                     return false;
@@ -764,7 +695,7 @@ if (!empty($_POST['order_placed'])) {
                 jQuery('#cardno').toggleClass('invalid', !jQuery.payment.validateCardNumber(jQuery('#cardno').val()));
                 jQuery('#card_expire').toggleClass('invalid', !jQuery.payment.validateCardExpiry(jQuery('#card_expire').payment('cardExpiryVal')));
                 jQuery('#securitycode').toggleClass('invalid', !jQuery.payment.validateCardCVC(jQuery('#securitycode').val(), cardType));
-                                            
+                                                        
                 if(jQuery('#card').hasClass('invalid')){
                     alert('Please provide correct card type.\n');
                     return false;
@@ -781,20 +712,20 @@ if (!empty($_POST['order_placed'])) {
                     alert('Please provide correct security code.\n');
                     return false;
                 }
-                                                            
+                                                                        
                 if(!charset.test(jQuery('#nameoncard').val()) || jQuery('#nameoncard').val()=="") {
                     alert("Please fill in the name on card and character only");
                     return false;
                 }
-                                                            
+                                                                        
                 jQuery('#booking_arrival').val(jQuery('#arrival_date').val());
                 jQuery('#booking_departure').val(jQuery('#departure_date').val());
-                                                            
+                                                                        
                 return true;
             });
-                                                    
+                                                                
         });
-                                                    
+                                                                
         function submitBooking(){
             jQuery('#billinginfo_form').submit();
         }

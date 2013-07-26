@@ -35,25 +35,27 @@ if ($page_links) {
     <table cellspacing="0" class="wp-list-table widefat fixed posts">
         <thead>
             <tr>
-                <th class="manage-column column-cb desc" id="title" scope="col"  style="width: 100px;"><span>Booking ID</span></th>
-                <th style="" class="manage-column column-taxonomy-station"  scope="col">Cottage</th>
+                <th class="manage-column column-cb desc" id="title" scope="col" style="width: 5%;" ><span># ID</span></th>
+                <th style="" class="manage-column column-taxonomy-station"  scope="col" style="width: 10%">Cottage</th>
 <!--                <th style="" class="manage-column column-cottage_number"  scope="col">Cottage Number/Room</th>-->
-                <th style="" class="manage-column column-comments num desc"  scope="col"><span>Email</span></th>
-                <th style="" class="manage-column column-date asc" scope="col"><span>Payment Info</span></th>
-                <th style="" class="manage-column column-date asc" scope="col"><span>Addons</span></th>
-                <th style="" class="manage-column column-date asc" scope="col"><span>Arrival</span></th>
-                <th style="" class="manage-column column-date asc" scope="col"><span>Departure</span></th>
-                <th style="" class="manage-column column-date asc" scope="col"><span>Total Price</span></th>
-                <th style="" class="manage-column column-date asc" scope="col"><span>Status</span></th>
-            </tr>
+                <th style="" class="manage-column column-data desc"  scope="col" style="width: 25%"><span>Email</span></th>
+                <th style="" class="manage-column column-data desc"  scope="col" style="width: 2%"><span>Person</span></th>
+                <th style="" class="manage-column column-date asc" scope="col" style="width: 5%"><span>Payment Info</span></th>
+                <th style="" class="manage-column column-date asc" scope="col" style="width: 15%"><span>Addons</span></th>
+                <th style="" class="manage-column column-date asc" scope="col" style="width: 10%"><span>Arrival</span></th>
+                <th style="" class="manage-column column-date asc" scope="col" style="width: 10%"><span>Departure</span></th>
+                <th style="" class="manage-column column-date asc" scope="col" style="width: 10%"><span>Total Price</span></th>
+                <th style="" class="manage-column column-date asc" scope="col" style="width: 10%"><span>Status</span></th>
+            </tr> 
         </thead>
 
         <tfoot>
             <tr>        
-                <th class="manage-column column-cb desc" id="title" scope="col"  style="width: 100px;"><span>Booking ID</span></th>
-                <th style="" class="manage-column column-taxonomy-station"  scope="col">Cottage</th>
+                <th class="manage-column column-cb desc" id="title" scope="col" style="width: 30px;" ><span># ID</span></th>
+                <th style="" class="manage-column column-taxonomy-station"  scope="col" style="width: 50px;">Cottage</th>
 <!--                <th style="" class="manage-column column-cottage_number"  scope="col">Cottage Number/Room</th>-->
-                <th style="" class="manage-column column-comments num desc"  scope="col"><span>Email</span></th>
+                <th style="" class="manage-column column-data asc"  scope="col" style="width: 250px;"><span>Email</span></th>
+                <th style="" class="manage-column column-data asc"  scope="col"><span>Person</span></th>
                 <th style="" class="manage-column column-date asc" scope="col"><span>Payment Info</span></th>
                 <th style="" class="manage-column column-date asc" scope="col"><span>Addons</span></th>
                 <th style="" class="manage-column column-date asc" scope="col"><span>Arrival</span></th>
@@ -91,22 +93,25 @@ if ($page_links) {
                 ?>
                 <tr valign="top" <?php echo $color; ?> class="booking-<?php echo $booking->ID; ?> type-cottage status-publish hentry<?php echo ($alternate ? ' alternate' : ''); ?> iedit author-self" id="booking-<?php echo $booking->ID; ?>">
 
-                    <td class="post-title page-title column-cb">
+                    <td>
                         <?php echo $booking->ID; ?>
                     </td>
-                    <td class="post-title page-title column-title">
-                        <strong><a title="View Cottage" href="<?php echo admin_url("post.php"); ?>?post=<?php echo $booking->cottage_id; ?>&amp;action=edit" class="row-title"><?php echo get_the_title($booking->cottage_id); ?></a></strong>
+                    <td>
+                        <strong><!--<a title="View Cottage" href="<?php echo admin_url("post.php"); ?>?post=<?php echo $booking->cottage_id; ?>&amp;action=edit" class="row-title"> --><?php echo get_the_title($booking->cottage_id); ?><!--</a>--></strong>
                     </td>
 <!--                    <td class="post-title page-title column-title">
                         <strong><?php echo $booking->cottage_number; ?></strong>
                     </td>-->
-                    <td class="post-title page-title column-title">
+                    <td>
                         <?php echo get_userdata($booking->user_id)->user_email; ?>
                     </td>
-                    <td class="post-title page-title column-title">
+                    <td>
+                        <?php echo $booking->people; ?>
+                    </td>
+                    <td>
                         <a href="javascript:void(0)" onclick="showPayInfo(<?php echo $booking->p_id; ?>); return false">View</a>
                     </td>
-                    <td class="post-title page-title column-title">
+                    <td>
                         <?php
                         $addons = json_decode($booking->addons);
                         if (!empty($addons)) {
@@ -118,16 +123,16 @@ if ($page_links) {
                         }
                         ?>
                     </td>
-                    <td class="post-title page-title column-title">
+                    <td>
                         <?php echo $booking->cottage_arrival_date; ?>
                     </td>
-                    <td class="post-title page-title column-title">
+                    <td>
                         <?php echo $booking->cottage_departure_date; ?>
                     </td>
-                    <td class="post-title page-title column-title">
+                    <td>
                         <?php echo $booking->cottage_total; ?>
                     </td>
-                    <td class="post-title page-title column-title">
+                    <td>
                         <div id="booking-status-div-<?php echo $booking->ID; ?>" style="float: left;">
                             <span id="booking-status-<?php echo $booking->ID; ?>" style="float: left;width: 86px;">
                                 <?php
@@ -148,7 +153,7 @@ if ($page_links) {
                             <select id="booking-status-edit-<?php echo $booking->ID; ?>" name="booking-status-edit-<?php echo $booking->ID; ?>">
                                 <option value="0">Pending</option>
                                 <option value="1">Approved</option>
-                                <option value="-1">Canceled</option>
+                                <option value="-1">Cancelled</option>
                             </select>&nbsp;<div id="publishing-action">
 <span class="spinner"></span><button class="button-primary" onclick="updateBookingStatus(<?php echo $booking->ID; ?>);">Update</button></div>
                         </div>
@@ -194,7 +199,7 @@ if ($page_links) {
             jQuery('#booking-status-edit-div-'+bid).hide();
             jQuery('#booking-status-div-'+bid).show();
             jQuery('#publishing-action .spinner').hide();
-            //location.reload(true);
+            location.reload(true);
         },
         "json"
     );

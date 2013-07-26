@@ -1,3 +1,4 @@
+<div class="wrap">
 <h1>Bookings</h1>
 
 <?php
@@ -8,20 +9,23 @@ get_currentuserinfo();
 
 $booking_table = $table_prefix . 'bookinglog';
 $payment_table = $table_prefix . 'payment';
-$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+$paged = ($_REQUEST['paged']) ? $_REQUEST['paged'] : 1;
 $limit = 10; // number of rows in page
 $offset = ( $paged - 1 ) * $limit;
-$total = $wpdb->get_var( "SELECT COUNT(`id`) FROM $booking_table WHERE user_id = ".$current_user->ID );
-$num_of_pages = ceil( $total / $limit );
 
-$bookings = $wpdb->get_results("SELECT * FROM $booking_table WHERE user_id = " . $current_user->ID." LIMIT $offset, $limit");
+$total = $wpdb->get_var( "SELECT COUNT(`id`) FROM $booking_table WHERE user_id = ".$current_user->ID );
+
+$num_of_pages = ceil( $total / $limit );
+$query = "SELECT * FROM $booking_table WHERE user_id = " . $current_user->ID." LIMIT $offset, $limit";
+
+$bookings = $wpdb->get_results($query);
 
 $page_links = paginate_links( array(
-    'base' => add_query_arg( 'pagenum', '%#%' ),
+    'base' => add_query_arg( 'paged', '%#%' ),
     'format' => '',
     'prev_text' => __( '&laquo;', 'aag' ),
     'next_text' => __( '&raquo;', 'aag' ),
-    'total' => $total,
+    'total' => $num_of_pages,
     'current' => $paged
 ) );
 
@@ -32,29 +36,31 @@ if ( $page_links ) {
 <table cellspacing="0" class="wp-list-table widefat fixed posts">
     <thead>
         <tr>
-            <th class="manage-column column-cb desc" id="title" scope="col"  style="width: 100px;"><span>Booking ID</span></th>
-            <th style="width: 100px;" class="manage-column column-taxonomy-station"  scope="col">Cottage</th>
-            <th style="width: 200px;" class="manage-column column-comments num desc"  scope="col"><span>Email</span></th>
-            <th style="width: 150px;" class="manage-column column-date asc" scope="col"><span>Payment Info</span></th>
-            <th style="width: 200px;" class="manage-column column-date asc" scope="col"><span>Addons</span></th>
-            <th style="width: 150px;" class="manage-column column-date asc" scope="col"><span>Arrival</span></th>
-            <th style="width: 150px;" class="manage-column column-date asc" scope="col"><span>Departure</span></th>
-            <th style="width: 120px;" class="manage-column column-date asc" scope="col"><span>Total Price</span></th>
-            <th style="width: 200px;" class="manage-column column-date asc" scope="col"><span>Status</span></th>
+            <th class="manage-column column-cb desc" id="title" scope="col" style="width: 70px;"><span>Booking ID</span></th>
+            <th class="manage-column column-taxonomy-station"  scope="col" style="width: 150px;">Cottage</th>
+            <th class="manage-column column-comments num desc"  scope="col" style="width: 200px;" ><span>Email</span></th>
+            <th class="manage-column column-comments num desc"  scope="col" style="width: 50px;"><span>Person</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 90px;"><span>Payment Info</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 120px;"><span>Addons</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 80px;"><span>Arrival</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width:80px"><span>Departure</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 70px;"><span>Total Price</span></th>
+            <th class="manage-column column-date asc" scope="col"><span>Status</span></th>
         </tr>
     </thead>
 
     <tfoot>
         <tr>        
-            <th class="manage-column column-cb desc" id="title" scope="col"  style="width: 100px;"><span>Booking ID</span></th>
-            <th style="width: 100px;" class="manage-column column-taxonomy-station"  scope="col">Cottage</th>
-            <th style="width: 200px;" class="manage-column column-comments num desc"  scope="col"><span>Email</span></th>
-            <th style="width: 150px;" class="manage-column column-date asc" scope="col"><span>Payment Info</span></th>
-            <th style="width: 200px;" class="manage-column column-date asc" scope="col"><span>Addons</span></th>
-            <th style="width: 150px;" class="manage-column column-date asc" scope="col"><span>Arrival</span></th>
-            <th style="width: 150px;" class="manage-column column-date asc" scope="col"><span>Departure</span></th>
-            <th style="width: 120px;" class="manage-column column-date asc" scope="col"><span>Total Price</span></th>
-            <th style="width: 200px;" class="manage-column column-date asc" scope="col"><span>Status</span></th>
+            <th class="manage-column column-cb desc" id="title" scope="col" style="width: 70px;"><span>Booking ID</span></th>
+            <th class="manage-column column-taxonomy-station"  scope="col" style="width: 150px;">Cottage</th>
+            <th class="manage-column column-comments num desc"  scope="col" style="width: 200px;"><span>Email</span></th>
+            <th class="manage-column column-comments num desc"  scope="col" style="width: 50px;"><span>Person</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 90px;"><span>Payment Info</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 120px;"><span>Addons</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 80px;"><span>Arrival</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width:80px" ><span>Departure</span></th>
+            <th class="manage-column column-date asc" scope="col" style="width: 70px;"><span>Total Price</span></th>
+            <th class="manage-column column-date asc" scope="col"><span>Status</span></th>
         </tr>
 
     </tfoot>
@@ -83,6 +89,9 @@ if ( $page_links ) {
                 </td>
                 <td class="post-title page-title column-title">
                     <?php echo get_userdata($booking->user_id)->user_email; ?>
+                </td>
+                <td class="post-title page-title column-title">
+                    <?php echo $booking->people; ?>
                 </td>
                 <td class="post-title page-title column-title">
                     <a href="javascript:void(0)" onclick="showPayInfo(<?php echo $booking->p_id; ?>); return false">View</a>
@@ -233,3 +242,4 @@ if ( $page_links ) {
         
     }
 </script>
+</div>

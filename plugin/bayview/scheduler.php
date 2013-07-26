@@ -122,10 +122,10 @@ function bayview_scheduler_page() {
             state = document.getElementById(id).style.display;
             if(state != 'block') {
                 document.getElementById(id).style.display = 'block';
-                //document.getElementById(image_id).src =  imix_admin001n.imix_core_images_url + '/icon_window_collapse.gif';
+
             } else {
                 document.getElementById(id).style.display = 'none';
-                //document.getElementById(image_id).src =  imix_admin001n.imix_core_images_url + '/icon_window_expand.gif';
+
             }
             return false;
         }
@@ -271,7 +271,8 @@ function bayview_scheduler_page() {
                 If yes press <strong>Ok</strong> else <strong>Cancel</strong>.
             </p>
         </div>
-        <div class="icon-image" id="icon-display"><img src="<?php echo IMIX_CORE_IMAGES_URL; ?>/coupons.png" alt=""></div>
+
+	<div id="icon-edit" class="icon32 icon32-posts-post"><br></div>
         <h2> 
             <?php esc_html_e('Scheduler', 'imix'); ?>
             <a href="#" id="add_coupon_box_link" class="add_item_link button add-new-h2" onClick="return show_status_box( 'add_coupon_box', 'add_coupon_box_link' );">
@@ -302,7 +303,7 @@ function bayview_scheduler_page() {
                                 <tr>
                                     <th style="text-align:left;"><?php esc_html_e('From*', 'imix'); ?></th>
                                     <th><?php esc_html_e('To*', 'imix'); ?></th>
-                                    <th><?php esc_html_e('Nights*', 'imix'); ?></th>
+                                    <th><?php esc_html_e('Min. Nights*', 'imix'); ?></th>
                                     <th><?php esc_html_e('Inventory*', 'imix'); ?></th>                                    
                                     <th><?php esc_html_e('Midweek Price*', 'imix'); ?></th>
                                     <th><?php esc_html_e('Weekend Price*', 'imix'); ?></th>
@@ -391,7 +392,7 @@ function bayview_scheduler_page() {
         register_column_headers('display-coupon-details', $columns);
         $paged = ($_REQUEST['paged']) ? $_REQUEST['paged'] : 1;
 
-        $limit = 20; // number of rows in page
+        $limit = 10; // number of rows in page
         $offset = ( $paged - 1 ) * $limit;
 
         $total = $wpdb->get_var("SELECT COUNT(`id`) FROM `{$wpdb->prefix}bayview_schedule` ");
@@ -517,7 +518,7 @@ function bayview_schedule_edit_form($schedule) {
                     <tr>
                         <th><?php esc_html_e('From*', 'imix'); ?></th>
                         <th><?php esc_html_e('To*', 'imix'); ?></th>
-                        <th><?php esc_html_e('Nights*', 'imix'); ?></th>
+                        <th><?php esc_html_e('Min. Nights*', 'imix'); ?></th>
                         <th><?php esc_html_e('Inventory*', 'imix'); ?></th>  
                         <th><?php esc_html_e('Cottages*', 'imix'); ?></th>
                         <th><?php esc_html_e('Midweek Price*', 'imix'); ?></th>

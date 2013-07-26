@@ -349,10 +349,9 @@ function bayview_cottage_inner_custom_box($post) {
 
     // The actual fields for data entry
     // Use get_post_meta to retrieve an existing value from the database and use the value for the form
-    
+
     $people = get_post_meta($post->ID, $key = '_people', $single = true);
     $children = get_post_meta($post->ID, $key = '_children', $single = true);
-    $nightlyrate = get_post_meta($post->ID, $key = '_nightly_rate', $single = true);
     $location = get_post_meta($post->ID, $key = '_location', $single = true);
     $location_link = get_post_meta($post->ID, $key = '_location_link', $single = true);
     $cottage_inventory = get_post_meta($post->ID, $key = '_inventory', $single = true);
@@ -361,15 +360,12 @@ function bayview_cottage_inner_custom_box($post) {
     _e("Inventory", 'myplugin_textdomain');
     echo '</label></td> ';
     echo '<td><input type="text" id="cottage_inventory" name="cottage_inventory" value="' . esc_attr($cottage_inventory) . '" size="5" /></td></tr>';
-    
+
     echo '<tr><td><label for="bayview_cottage_people">';
     _e("Maximum people", 'myplugin_textdomain');
     echo '</label></td> ';
-    echo '<td><input type="text" id="cottage_people" name="cottage_people" value="' . esc_attr($people) . '" size="5" /></td></tr>';
-    echo '<tr><td><label for="bayview_cottage_nightly_rate">';
-    _e("Nightly Rate (USD)", 'myplugin_textdomain');
-    echo '</label></td> ';
-    echo '<td><input type="text" id="cottage_nightly_rate" name="cottage_nightly_rate" value="' . esc_attr($nightlyrate) . '" size="5" /></td></tr></table>';
+    echo '<td><input type="text" id="cottage_people" name="cottage_people" value="' . esc_attr($people) . '" size="5" /></td></tr></table>';
+
     echo '<hr style="border-width: 1px 0px 0px 0px; border-style: solid; border-color: #bfbfbf;"/>';
     echo '<table><tr><td><label for="bayview_cottage_people"><strong>';
     _e("Cottage Location", 'myplugin_textdomain');
@@ -706,10 +702,10 @@ function bayview_save_postdata($post_id) {
             add_post_meta($post_ID, '_inventory', $location_link, true) or update_post_meta($post_ID, '_inventory', $cottage_inventory);
             // or a custom table (see Further Reading section below)
             //sanitize user input
-            $data = sanitize_text_field($_POST['cottage_nightly_rate']);
+            //$data = sanitize_text_field($_POST['cottage_nightly_rate']);
             // Do something with $mydata 
             // either using 
-            add_post_meta($post_ID, '_nightly_rate', $data, true) or update_post_meta($post_ID, '_nightly_rate', $data);
+            //add_post_meta($post_ID, '_nightly_rate', $data, true) or update_post_meta($post_ID, '_nightly_rate', $data);
             // or a custom table (see Further Reading section below)
             break;
         case 'addon':
@@ -1189,12 +1185,27 @@ function bayview_admin_head() {
         }
     </style>
     <script type="text/javascript" >
-        jQuery(document).ready(function(){
-            jQuery( ".datepicker" ).datepicker({dateFormat:'yy-mm-dd'});
-        });
-                                                                                                                                                                                                                    
-                                                                                                                                                                                                                    
-                                                                                                                                                                                                                    
+    <?php if ($_REQUEST['page'] != 'bayview/offline-punching.php') { ?>
+            jQuery(document).ready(function(){
+                jQuery( ".datepicker" ).datepicker({dateFormat:'yy-mm-dd'});
+            });
+                                                                                                               
+    <?php } else { ?>
+                                                    
+            jQuery(document).ready(function(){
+                jQuery( ".datepicker" ).datepicker({
+                    minDate: new Date(), 
+                    dateFormat: "yy-mm-dd",
+                    firstDay: 1,
+                    changeFirstDay: false,
+                    beforeShowDay: function(date) {
+                        return [(date.getDay() < 6), ''];
+                    }
+                });
+            });
+    <?php } ?>
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                        
         function add_specialday_times(sday) {
 
             var day_of_week=jQuery('#day_of_week').val(), 
@@ -1217,11 +1228,11 @@ function bayview_admin_head() {
 
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
             jQuery.post(ajaxurl, data, function(response) {
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
                 if(response.result.toLowerCase() == "success"){
                     jQuery('#title').val() || jQuery('#title').val('Auto Drafted') && jQuery('#title').trigger('focus'); 
                     autosave();
-                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                        
                     var new_row =   "<tr id='specialday_time_"+response.id+"'>"+
                         "<td align='center'>"+getDayOfWeek(response.day_of_week)+"</td>"+
                         "<td align='center'>"+getDayOfMonth(response.day_of_month)+"</td>"+
@@ -1243,14 +1254,14 @@ function bayview_admin_head() {
                         response.result
                 );
                 }
-                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                    
             },"json");
-                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                
         }
         function delete_specialday_time(tid) {
 
-                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                
             var data = {
                 'action': 'specialday_delete',
                 'specialday_time_id': tid
@@ -1258,16 +1269,16 @@ function bayview_admin_head() {
 
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
             jQuery.post(ajaxurl, data, function(response) {
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
                 if(response.search(/\bsuccess/i)>=0){
                     jQuery('#title').val() || jQuery('#title').val('Auto Drafted') && jQuery('#title').trigger('focus');
                     autosave();
                     jQuery('#specialday_time_'+tid).remove();
                 }
                 alert(response);
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
             });
-                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                
         }
         function add_season_times(season) {
 
@@ -1291,11 +1302,11 @@ function bayview_admin_head() {
 
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
             jQuery.post(ajaxurl, data, function(response) {
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
                 if(response.result.toLowerCase() == "success"){
                     jQuery('#title').val() || jQuery('#title').val('Auto Drafted') && jQuery('#title').trigger('focus'); 
                     autosave();
-                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                        
                     var new_row =   "<tr id='season_time_"+response.id+"'>"+
                         "<td align='center'>"+response.from_date+"</td>"+
                         "<td align='center'>"+response.to_date+"</td>"+
@@ -1317,14 +1328,14 @@ function bayview_admin_head() {
                         response.result
                 );
                 }
-                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                    
             },"json");
-                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                
         }
         function delete_season_time(tid) {
 
-                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                
             var data = {
                 'action': 'season_delete',
                 'season_time_id': tid
@@ -1332,18 +1343,18 @@ function bayview_admin_head() {
 
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
             jQuery.post(ajaxurl, data, function(response) {
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
                 if(response.search(/\bsuccess/i)>=0){
                     jQuery('#title').val() || jQuery('#title').val('Auto Drafted') && jQuery('#title').trigger('focus');
                     autosave();
                     jQuery('#season_time_'+tid).remove();
                 }
                 alert(response);
-                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                    
             });
-                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                
         }
-                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                            
         function getDayOfWeek($day){
             $day = parseInt($day);
             if(isNaN($day)) $day = -1;
@@ -1379,16 +1390,16 @@ function bayview_admin_head() {
                 "December"
             ];
             $month--;
-                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                        
             if($month >= 0 && $month < $months.length) {
                 return $months[$month];
             }
-                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                        
             return "Every Month";
         }
-                                                                                                                                                                                                                    
-                                                                                                                                                                                                                    
-                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                        
     </script>
     <?php
 }
@@ -1584,47 +1595,10 @@ function getSeasons($date = '', $cottage_id = 0) {
 
 function getCottagePrice($cottage_id, $cottage_price, $date1, $date2, $sumup = false) {
     global $wpdb;
-   
 
- $time1 = strtotime($date1);
+
+    $time1 = strtotime($date1);
     $time2 = strtotime($date2);
-    
-if ($time1 > $time2) {
-        $tmp = $date1;
-        $date1 = $date2;
-        $date2 = $tmp;
-        $tmp = $time1;
-        $time1 = $time2;
-        $time2 = $tmp;
-    }	
-
-	$day_interval = 24 * 60 * 60;
-
-	$nights = ($time2 - $time1)/$day_interval;
-
-	$weekends = 0;
-
-	for ($time = $time1; $time < $time2; $time += $day_interval) {
-		$day = date("N", $time);
-		if($day == 5 || $day == 6) $weekends+=1;
-	}
-	$weekends;
-	$date1 = date('Y-m-d', $time1);
-	$date2 = date('Y-m-d', $time2);
-
-	$weekday_price = $wpdb->get_col("SELECT `schedule_price` FROM {$wpdb->prefix}bayview_schedule WHERE ('$date1' BETWEEN `schedule_from` AND `schedule_to`) AND  ('$date2' BETWEEN `schedule_from` AND `schedule_to`) AND `schedule_cottage` = $cottage_id AND `active` = '1' ORDER BY `ID` DESC LIMIT 0,1");    
-
-	$weekend_price = $wpdb->get_col("SELECT `weekend_price` FROM `{$wpdb->prefix}bayview_schedule` WHERE ('$date1' BETWEEN `schedule_from` AND `schedule_to`) AND  ('$date2' BETWEEN `schedule_from` AND `schedule_to`) AND `schedule_cottage` = $cottage_id AND `active` = '1' ORDER BY `ID` DESC LIMIT 0,1");    
-
-	$weekday_price = current($weekday_price);
-	$weekend_price = current($weekend_price);
-
-	$price = floatval($weekday_price) * intval($nights) + (floatval($weekend_price)-floatval($weekday_price)) * intval($weekends);
-
-    return $price;
-    //$alldbseasons = getSeasons(null, $cottage_id);
-
-/*
 
     if ($time1 > $time2) {
         $tmp = $date1;
@@ -1637,118 +1611,156 @@ if ($time1 > $time2) {
 
     $day_interval = 24 * 60 * 60;
 
-    $prices = array();
+    $nights = ($time2 - $time1) / $day_interval;
 
-    for ($time = $time1; $time <= $time2; $time += $day_interval) {
+    $weekends = 0;
 
-        $date = date('Y-m-d', $time);
-        $matched_seasons = findSeasons($date, $cottage_id); //, $alldbseasons);
-        $price = $cottage_price;
-
-        foreach ($matched_seasons as $ms) {
-            $season_price = trim($ms->price);
-            $percentage = false;
-            if ($season_price[strlen($season_price) - 1] == '%') {
-                $season_price = substr($season_price, 0, strlen($season_price) - 1);
-                $percentage = true;
-            }
-
-            $modification_flag = 0; // replace current price
-
-            if ($season_price[0] == '+') {
-                // add to current price
-                $modification_flag = 1;
-                $season_price = intval($season_price);
-            } elseif ($season_price[0] == '-') {
-                // substract from current price
-                $modification_flag = 2;
-                $season_price = -intval($season_price);
-            }
-
-            switch ($modification_flag) {
-                case 0:
-                    if ($percentage) {
-                        $price = $price * ($season_price / 100.0);
-                    } else {
-                        $price = $season_price;
-                    }
-                    break;
-                case 1:
-                    if ($percentage) {
-                        $price += $price * ($season_price / 100.0);
-                    } else {
-                        $price += $season_price;
-                    }
-                    break;
-                case 2:
-                    if ($percentage) {
-                        $price -= $price * ($season_price / 100.0);
-                    } else {
-                        $price -= $season_price;
-                    }
-                    break;
-            }
-        }
-
-
-        $special_days = getSpecialDays($date);
-
-        foreach ($special_days as $sd) {
-            $sday_price = trim($sd->price);
-            $percentage = false;
-            if ($sday_price[strlen($sday_price) - 1] == '%') {
-                $sday_price = substr($sday_price, 0, strlen($sday_price) - 1);
-                $percentage = true;
-            }
-            $modification_flag = 0; // replace current price
-
-            if ($sday_price[0] == '+') {
-                // add to current price
-                $modification_flag = 1;
-                $sday_price = intval($sday_price);
-            } elseif ($sday_price[0] == '-') {
-                // substract from current price
-                $modification_flag = 2;
-                $sday_price = -intval($sday_price);
-            }
-
-            switch ($modification_flag) {
-                case 0:
-                    if ($percentage) {
-                        $price = $price * ($sday_price / 100.0);
-                    } else {
-                        $price = $sday_price;
-                    }
-                    break;
-                case 1:
-                    if ($percentage) {
-                        $price += $price * ($sday_price / 100.0);
-                    } else {
-                        $price += $sday_price;
-                    }
-                    break;
-                case 2:
-                    if ($percentage) {
-                        $price -= $price * ($sday_price / 100.0);
-                    } else {
-                        $price -= $sday_price;
-                    }
-                    break;
-            }
-        }
-        $prices[$date] = $price;
+    for ($time = $time1; $time < $time2; $time += $day_interval) {
+        $day = date("N", $time);
+        if ($day == 5 || $day == 6)
+            $weekends+=1;
     }
+    $weekends;
+    $date1 = date('Y-m-d', $time1);
+    $date2 = date('Y-m-d', $time2);
 
-    if ($sumup) {
-        $sum = 0;
+    $weekday_price = $wpdb->get_col("SELECT `schedule_price` FROM {$wpdb->prefix}bayview_schedule WHERE ('$date1' BETWEEN `schedule_from` AND `schedule_to`) AND  ('$date2' BETWEEN `schedule_from` AND `schedule_to`) AND `schedule_cottage` = $cottage_id AND `active` = '1' ORDER BY `ID` DESC LIMIT 0,1");
 
-        foreach ($prices as $p)
-            $sum += $p;
+    $weekend_price = $wpdb->get_col("SELECT `weekend_price` FROM `{$wpdb->prefix}bayview_schedule` WHERE ('$date1' BETWEEN `schedule_from` AND `schedule_to`) AND  ('$date2' BETWEEN `schedule_from` AND `schedule_to`) AND `schedule_cottage` = $cottage_id AND `active` = '1' ORDER BY `ID` DESC LIMIT 0,1");
 
-        return $sum;
-    }
+    $weekday_price = current($weekday_price);
+    $weekend_price = current($weekend_price);
 
-    return $prices;*/
+    $price = floatval($weekday_price) * intval($nights) + (floatval($weekend_price) - floatval($weekday_price)) * intval($weekends);
+
+    return $price;
+    //$alldbseasons = getSeasons(null, $cottage_id);
+
+    /*
+
+      if ($time1 > $time2) {
+      $tmp = $date1;
+      $date1 = $date2;
+      $date2 = $tmp;
+      $tmp = $time1;
+      $time1 = $time2;
+      $time2 = $tmp;
+      }
+
+      $day_interval = 24 * 60 * 60;
+
+      $prices = array();
+
+      for ($time = $time1; $time <= $time2; $time += $day_interval) {
+
+      $date = date('Y-m-d', $time);
+      $matched_seasons = findSeasons($date, $cottage_id); //, $alldbseasons);
+      $price = $cottage_price;
+
+      foreach ($matched_seasons as $ms) {
+      $season_price = trim($ms->price);
+      $percentage = false;
+      if ($season_price[strlen($season_price) - 1] == '%') {
+      $season_price = substr($season_price, 0, strlen($season_price) - 1);
+      $percentage = true;
+      }
+
+      $modification_flag = 0; // replace current price
+
+      if ($season_price[0] == '+') {
+      // add to current price
+      $modification_flag = 1;
+      $season_price = intval($season_price);
+      } elseif ($season_price[0] == '-') {
+      // substract from current price
+      $modification_flag = 2;
+      $season_price = -intval($season_price);
+      }
+
+      switch ($modification_flag) {
+      case 0:
+      if ($percentage) {
+      $price = $price * ($season_price / 100.0);
+      } else {
+      $price = $season_price;
+      }
+      break;
+      case 1:
+      if ($percentage) {
+      $price += $price * ($season_price / 100.0);
+      } else {
+      $price += $season_price;
+      }
+      break;
+      case 2:
+      if ($percentage) {
+      $price -= $price * ($season_price / 100.0);
+      } else {
+      $price -= $season_price;
+      }
+      break;
+      }
+      }
+
+
+      $special_days = getSpecialDays($date);
+
+      foreach ($special_days as $sd) {
+      $sday_price = trim($sd->price);
+      $percentage = false;
+      if ($sday_price[strlen($sday_price) - 1] == '%') {
+      $sday_price = substr($sday_price, 0, strlen($sday_price) - 1);
+      $percentage = true;
+      }
+      $modification_flag = 0; // replace current price
+
+      if ($sday_price[0] == '+') {
+      // add to current price
+      $modification_flag = 1;
+      $sday_price = intval($sday_price);
+      } elseif ($sday_price[0] == '-') {
+      // substract from current price
+      $modification_flag = 2;
+      $sday_price = -intval($sday_price);
+      }
+
+      switch ($modification_flag) {
+      case 0:
+      if ($percentage) {
+      $price = $price * ($sday_price / 100.0);
+      } else {
+      $price = $sday_price;
+      }
+      break;
+      case 1:
+      if ($percentage) {
+      $price += $price * ($sday_price / 100.0);
+      } else {
+      $price += $sday_price;
+      }
+      break;
+      case 2:
+      if ($percentage) {
+      $price -= $price * ($sday_price / 100.0);
+      } else {
+      $price -= $sday_price;
+      }
+      break;
+      }
+      }
+      $prices[$date] = $price;
+      }
+
+      if ($sumup) {
+      $sum = 0;
+
+      foreach ($prices as $p)
+      $sum += $p;
+
+      return $sum;
+      }
+
+      return $prices; */
 }
 
 function findSeasons($date, $cottage_id = 0, $seasons = null) {
@@ -1898,8 +1910,9 @@ schedule.schedule_nights <=$nights
             foreach ($cottage_result as $cottage) {
                 $cottages[$cottage->ID] = $cottage->schedule_cottage;
             }
-            if (!empty($cottages)){
-		return $cottages;}
+            if (!empty($cottages)) {
+                return $cottages;
+            }
             else
                 return 0;
         }
@@ -2047,13 +2060,13 @@ function isValidBooking($schedule_id, $date1, $date2) {
     $time2 = strtotime($date2);
 
     if ($time1 > $time2) {
-        $msg = "Please re-check the Arrival and Departure dates. Departure cannot be before Arrival!";
+        $msg = "<br><br><br><h3 style='text-align:center'>Please re-check the Arrival and Departure dates. Departure cannot be before Arrival!</h3>";
         return $msg;
     }
     /*
      * validation for checking that cottage selected is available for booking -- database and in session 
      */
-
+/**
     if (!empty($schedule_id)) {
 
         global $wpdb;
@@ -2069,7 +2082,7 @@ function isValidBooking($schedule_id, $date1, $date2) {
             $msg = ($schedule_data->schedule_cottage == 0 ? '' : get_post($schedule_data->schedule_cottage)->post_title) . " is already booked for $exists->cottage_arrival_date and $exists->cottage_departure_date, please try for another dates.";
             return $msg;
         }
-
+ 
         $exists = $wpdb->get_row("Select * FROM {$wpdb->prefix}bookinglog WHERE `cottage_status` > 0 AND cottage_id = $cottage_id AND ((cottage_arrival_date BETWEEN '$start_date' AND '$end_date') OR (cottage_departure_date BETWEEN '$start_date' AND '$end_date')) ");
 
         if (!empty($exists)) {
@@ -2077,11 +2090,12 @@ function isValidBooking($schedule_id, $date1, $date2) {
             return $msg;
         }
     }
+**/
+
     /*
      * validation for checking that cottage selected is available for booking -- database and in session 
      */
-
-
+/** 
     $day_interval = 24 * 60 * 60;
 
     $total_days = ($time2 - $time1) / $day_interval + 1;
@@ -2105,7 +2119,7 @@ function isValidBooking($schedule_id, $date1, $date2) {
         }
     }
 
-    $sday_passed = array();
+   $sday_passed = array();
 
     for ($time = $time1, $days_left = $total_days; $time <= $time2; $time += $day_interval, $days_left--) {
         $date = date('Y-m-d', $time);
@@ -2134,7 +2148,7 @@ function isValidBooking($schedule_id, $date1, $date2) {
             $msg = "$total_days nights booking not allowed at once. Please specify between " . $min_nights . " and " . ($max_nights < 0 ? 'unlimited' : $max_nights) . " nights";
             return $msg;
         }
-    }
+    }  **/
 
 
     return true;
@@ -2187,7 +2201,8 @@ function bayview_get_cottage_price_and_validate_booking() {
     foreach ($rates as $r)
         $price += $r;
 
-	$price = getCottagePrice($cottage_id, 0, $arrival, $departure);;
+    $price = getCottagePrice($cottage_id, 0, $arrival, $departure);
+    ;
 
     echo json_encode(array("result" => 'success', 'msg' => 'Booking successful!', 'price' => $price, 'rates' => $rates));
 
@@ -2567,7 +2582,7 @@ class bayview_cart_widget extends WP_Widget {
         extract($args);
         $title = apply_filters('widget_title', $instance['title']);
 
-        $cart_data1 = $_SESSION['cart_offer_data'];
+        $cart_data1 = isset($_SESSION['cart_offer_data'])? $_SESSION['cart_offer_data'] :  "";
         $cart_data2 = $_SESSION['data_for_cart'];
 
         if (!empty($cart_data1) || !empty($cart_data2)) {
@@ -2586,7 +2601,7 @@ class bayview_cart_widget extends WP_Widget {
                 <div class="bl-chk-row-one">
                     <div class="widget-left" style="position: relative">
 
-                        <?php // $large_image_url = wp_get_attachment_image_src( $value['cottage_Id'],array(110,90));        ?>
+                        <?php // $large_image_url = wp_get_attachment_image_src( $value['cottage_Id'],array(110,90));         ?>
                         <?php echo (get_the_post_thumbnail($value['offer_id'], array(110, 90)) ? get_the_post_thumbnail($value['offer_id'], array(110, 90)) : '<img height="90" width="90" alt="No Image" class="attachment-110x90 wp-post-image" src="' . get_bloginfo('template_directory') . '/images/160x100.jpg">'); ?><span onclick="remove_cart_offer_detail(<?php echo $value['offer_id']; ?>)" style="top: 0;right: 0;
                               position: absolute; z-index: 12; font-weight: bold; font-size: larger; color: white; background-color: black; cursor: pointer">X</span>
                     </div>
@@ -2609,27 +2624,26 @@ class bayview_cart_widget extends WP_Widget {
                 <div class="bl-chk-row-one">
                     <div class="widget-left" style="position: relative">
 
-                        <?php // $large_image_url = wp_get_attachment_image_src( $value['cottage_Id'],array(110,90));        ?>
+                        <?php // $large_image_url = wp_get_attachment_image_src( $value['cottage_Id'],array(110,90));         ?>
                         <?php echo (get_the_post_thumbnail($value['cottage_Id'], array(110, 90)) ? get_the_post_thumbnail($value['cottage_Id'], array(110, 90)) : '<img height="90" width="90" alt="No Image" class="attachment-110x90 wp-post-image" src="' . get_bloginfo('template_directory') . '/images/160x100.jpg">' ); ?><span onclick="remove_cart_detail(<?php echo $value['cottage_Id']; ?>)" style="top: 0;right: 0;
                               position: absolute; z-index: 12; font-weight: bold; font-size: larger; color: white; background-color: black; cursor: pointer">X</span>
                 <!--                        <img src="<?php echo get_template_directory_uri(); ?>/images/thum-imgs01.jpg" alt="" />-->
                     </div>
                     <div class="widget-right">
                         <h2><?php echo get_the_title($value['cottage_Id']); ?></h2>
-<?php 
-$args=array(
-			  'name' => 'my-reservation',
-			  'post_type' => 'page',
-			  'post_status' => 'publish',
-			  'posts_per_page' => 1
-			);
-$page = get_posts($args);
-$page = $page[0];
+                        <?php
+                        $args = array(
+                            'name' => 'my-reservation',
+                            'post_type' => 'page',
+                            'post_status' => 'publish',
+                            'posts_per_page' => 1
+                        );
+                        $page = get_posts($args);
+                        $page = $page[0];
+                        ?>
 
-?>
 
-
-                        <div><a href="<?php echo get_permalink($page).'?house='.$value['cottage_Id']; ?>"><img src="<?php echo get_template_directory_uri(); ?>/images/detail-btn.png" alt="" /></a></div>
+                        <div><a href="<?php echo get_permalink($page) . '?house=' . $value['cottage_Id']; ?>"><img src="<?php echo get_template_directory_uri(); ?>/images/detail-btn.png" alt="" /></a></div>
                         <h2>Total Price: $<?php echo $value['total'] ?></h2>
                     </div>
                 </div>
@@ -2783,13 +2797,18 @@ if (isset($_REQUEST['bayview_ajax_action']) && $_REQUEST['bayview_ajax_action'] 
 }
 
 function bayview_checkout_submit() {
-    global $wpdb, $table_prefix;
+    
+    global $wpdb, $table_prefix, $last_;
+    
     $bookinglog_table = $table_prefix . 'bookinglog';
 
     if (is_user_logged_in()) {
         global $current_user;
+        
         get_currentuserinfo();
-        $current_user->add_cap('customer');
+        if (!is_admin()) {
+            $current_user->add_cap('customer');
+        }
         if (empty($current_user->user_firstname)) {
             wp_update_user(array('ID' => $current_user->ID, 'first_name' => $_POST['fname']));
         }
@@ -2818,12 +2837,13 @@ function bayview_checkout_submit() {
         }
 
         $errors = bayview_submit_form_data($current_user->ID);
-
+        
         if (empty($errors)) {
             $msg = 1; //"Successfully booked!";
-
-            send_booking_email_notification($current_user->ID);
+            
+            //send_booking_email_notification($current_user->ID);
             update_user_meta($current_user->ID, '_odrerprocess', 'done');
+            
         } else {
             $msg = 2; //"Some error occured while processing the order, please try again";
 
@@ -3029,7 +3049,7 @@ function bayview_login_register() {
 }
 
 if (isset($_POST['login_register']) && $_POST['login_register'] != '') {
-    add_action('init', 'bayview_login_register');
+    add_action('template_redirect', 'bayview_login_register');
 }
 
 function bookCottage($cottage_id, $user_id, $price, $arrival, $departure, $addons, $people) {
@@ -3093,7 +3113,7 @@ function bayview_submit_form_data($user_id = null) {
     $booking_ids = array();
     $tax = floatval(get_option('bayview_booking_tax', 0));
     $tax = 1 + ($tax / 100.0);
-    
+
 
     if (!empty($offers_to_be_booked)) {
 
@@ -3167,17 +3187,16 @@ function bayview_submit_form_data($user_id = null) {
 
 
                 $price = getCottagePrice($cottage, get_post_meta($cottage, "_nightly_rate", true), $arrival, $departure, true);
-                
+
 
                 if (!empty($addons_db)) {
                     $addons_db = json_encode($addons_db);
                     //$addons_price *= $service;
                     $price += $addons_price;
-                    
                 }
 
                 $price *= $tax;
-                
+
                 $bookind_id = bookCottage($cottage, $user_id, $price, $arrival, $departure, $addons_db, get_post_meta($cottage, "_people", true));
                 $booking_ids[$bookind_id] = $bookind_id;
                 $total_price += $price;
@@ -3215,6 +3234,8 @@ function bayview_submit_form_data($user_id = null) {
                 $errors[] = "Cottage: " . get_the_title($cottage_id) . " is booked between $arrival and $departure. Please specify a different date and book again.";
                 continue;
             }
+            
+            $people = $cottage["people"];
 
             $price = getCottagePrice($cottage_id, get_post_meta($cottage_id, "_nightly_rate", true), $arrival, $departure, true);
 
@@ -3230,11 +3251,11 @@ function bayview_submit_form_data($user_id = null) {
                 $addons = json_encode($addons);
 //                $addons_price *= $service;
             }
-            
+
 
             $price = $price + $addons_price;
             $price *= $tax;
-            $bookind_id = bookCottage($cottage_id, $user_id, $price, $arrival, $departure, $addons, get_post_meta($cottage_id, "_people", true));
+            $bookind_id = bookCottage($cottage_id, $user_id, $price, $arrival, $departure, $addons, $people);
             $booking_ids[$bookind_id] = $bookind_id;
             $total_price += $price;
         }
@@ -3245,7 +3266,7 @@ function bayview_submit_form_data($user_id = null) {
             $payment_table, array(
         'user_id' => $user_id,
         'fname' => $fname,
-        'lname' => $fname,
+        'lname' => $lname,
         'address1' => $address1,
         'address2' => $address2,
         'country' => $country,
@@ -3289,7 +3310,8 @@ function bayview_submit_form_data($user_id = null) {
     $last_booking_id = $payinfo_id = $wpdb->insert_id;
 
     $wpdb->query("UPDATE $booking_table SET `p_id` = $payinfo_id WHERE `ID` IN (" . implode(',', $booking_ids) . ")");
-
+    
+    update_user_meta($user_id, '_last_booking_id', implode(',', $booking_ids));
 
     return $errors;
 }
@@ -3398,6 +3420,7 @@ function bayview_total_cottages_price() {
 }
 
 function my_new_user_notification($user_id, $plaintext_pass = '') {
+
     $user = new WP_User($user_id);
 
     $user_login = stripslashes($user->user_login);
@@ -3427,12 +3450,13 @@ function my_new_user_notification($user_id, $plaintext_pass = '') {
     $find = array('/##USERNAME##/i', '/##PASSWORD##/i', '/##BLOGNAME##/i', '/##SITEURL##/i', '/##LOGINURL##/i', '/##USEREMAIL##/i', '/##WEBSITE##/i');
     $replace = array($user_login, $plaintext_pass, get_settings('blogname'), get_settings('siteurl'), get_settings('siteurl') . '/wp-login.php', $user_email, get_settings('siteurl') . '/wp-login.php');
 
-    $headers = "MIME-Version: 1.0\n" .
+    
+	$headers = "MIME-Version: 1.0\n" .
             "Content-Type: text/plain; charset=\"" . get_settings('blog_charset') . "\"\n" .
             "From: " . get_settings('admin_email') . "\n" .
-            "CC: " . get_settings('admin_email') . "\n";
+            "CC: " . get_settings('admin_email') . "\n";		
 
-    $subject = "Welcome to '" . get_settings('blogname') . "'";
+    $subject = "Welcome to " . get_settings('blogname')  ;
     $subject = preg_replace($find, $replace, $subject);
     $subject = preg_replace("/##.*##/", "", $subject); //get rid of any remaining variables
 
@@ -3440,39 +3464,68 @@ function my_new_user_notification($user_id, $plaintext_pass = '') {
     $message = preg_replace($find, $replace, $message);
     $message = preg_replace("/##.*##/", "", $message); //get rid of any remaining variables
     $message = $body_head . $message . $body_foot;
+    	
+	/**echo $user_email . "<br>";
+	echo $subject ."<br>";
+	echo $message ."<br>";
+	echo $headers."<br>";
+	die("I AM HERER"); **/
+	    
+	$message = $body_head . $message . $body_foot;
     add_filter('wp_mail_content_type', create_function('', 'return "text/html"; '));
+	
     wp_mail($user_email, $subject, $message, $headers);
+
+
 }
 
 global $last_booking_id;
 $last_booking_id = -1;
 
 function confirmation_email_notification($status, $booking_id) {
-    global $last_booking_id, $wpdb;
+    global $last_booking_id, $wpdb;   
+    
+    
     $booking = $wpdb->get_results("SELECT * FROM `{$wpdb->prefix}bookinglog` WHERE `ID` = $booking_id");
-
     $user = new WP_User($booking[0]->user_id);
+	$user_info = get_userdata($booking[0]->user_id);
+    $name = ucfirst($user_info-> user_firstname ." ".$user_info-> user_lastname);
+
     $last_booking_id = $booking[0]->ID;
     $cottage_id = $booking[0]->cottage_id;
+    $cottage_title = get_the_title($cottage_id);   
     $booking_Arrival = $booking[0]->cottage_arrival_date;
     $booking_departure = $booking[0]->cottage_departure_date;
+	$nights = round((strtotime($booking_departure) - strtotime($booking_Arrival))/86400, 0);
+	$cottage_total = $booking[0]->cottage_total;
+	$people = $booking[0]->people;	
+	
+
+
+	
     $user_login = stripslashes($user->user_login);
-    $user_email = stripslashes($user->user_email);
+    $user_email = stripslashes($user->user_email); 
+    
+
 
     $status_got = '';
+	$sub ='';
     $message = get_option("bayview_confirmation_email", "");
     switch ($status) {
         case '0':
-            $status_got = 'Un-approved';
-            $message = get_option("bayview_cancellation_email", "");
+            $status_got = 'Pending';
+			$sub = " Pending ";
+            $message = get_option("bayview_booking_email", TRUE);
             break;
         case '1':
             $status_got = 'Approved';
-            $message = get_option("bayview_confirmation_email", "");
+			$sub = " Confirmation ";
+            $message = get_option("bayview_confirmation_email", TRUE);
             break;
         case '-1':
             $status_got = 'Canceled';
-            $message = get_option("bayview_cancellation_email", "");
+			$sub = " Cancellation ";
+            $message = get_option("bayview_cancellation_email", TRUE);
             break;
     }
     $body_head = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -3498,15 +3551,81 @@ Please write down the request number!\n
 All reservations are subject to approval by the Resort.\n';
     }
 
-    $find = array('/##BOOKINGSTATUS##/i', '/##COTTAGENAME##/i', '/##ARRIVALDATE##/i', '/##DEPARTUREDATE##/i', '/##USERNAME##/i', '/##BLOGNAME##/i', '/##SITEURL##/i', '/##LOGINURL##/i', '/##USEREMAIL##/i', '/##WEBSITE##/i', '/##REQUESTNO##/i');
-    $replace = array($status_got, get_post($cottage_id)->post_title, $booking_Arrival, $booking_departure, $user_login, get_settings('blogname'), get_settings('siteurl'), get_settings('siteurl') . '/wp-login.php', $user_email, get_settings('siteurl') . '/wp-login.php', $last_booking_id);
-
+    $find = array('/##BOOKINGSTATUS##/i', '/##COTTAGENAME##/i', '/##ARRIVALDATE##/i', '/##DEPARTUREDATE##/i', '/##USERNAME##/i', '/##BLOGNAME##/i', '/##SITEURL##/i', '/##LOGINURL##/i', '/##USEREMAIL##/i', '/##WEBSITE##/i', '/##REQUESTNO##/i', '/##COST##/i', '/##PERSON##/i', '/##COTTAGENAME##/i', '/##NIGHTS##/i', '/##NAME##/i');
+    $replace = array($status_got, get_post($cottage_id)->post_title, $booking_Arrival, $booking_departure, $user_login, get_settings('blogname'), get_settings('siteurl'), get_settings('siteurl') . '/wp-login.php', $user_email, get_settings('siteurl') . '/wp-login.php', $last_booking_id,$cottage_total,$people,$cottage_title,$nights,$name);
+ 
     $headers = "MIME-Version: 1.0\n" .
             "Content-Type: text/plain; charset=\"" . get_settings('blog_charset') . "\"\n" .
             "From: " . get_settings('admin_email') . "\n" .
             "CC: " . get_settings('admin_email') . "\n";
 
-    $subject = "Booking Confirmation at '" . get_settings('blogname') . "'";
+    $subject = "Booking".$sub."at ". get_settings('blogname') ;
+    $subject = preg_replace($find, $replace, $subject);
+    $subject = preg_replace("/##.*##/", "", $subject); //get rid of any remaining variables
+
+
+    $message = preg_replace($find, $replace, $message);
+    $message = preg_replace("/##.*##/", "", $message); //get rid of any remaining variables
+    $message = $body_head . $message . $body_foot;
+    add_filter('wp_mail_content_type', create_function('', 'return "text/html"; '));
+    wp_mail($user_email, $subject, $message, $headers);
+}
+
+function send_offline_email_notification($user_id, $booking_id) {
+    global $last_booking_id,$wpdb;;
+    $user = new WP_User($user_id);
+
+  $booking = $wpdb->get_results("SELECT * FROM `{$wpdb->prefix}bookinglog` WHERE `ID` = $booking_id");
+  $purchase = $wpdb->get_row("SELECT * FROM `{$wpdb->prefix}payment` WHERE `ID` = {$booking[0]->p_id}");
+    $user = new WP_User($booking[0]->user_id);
+	$user_info = get_userdata($booking[0]->user_id);
+	$name = ucfirst($purchase->fname." ".$purchase->lname);
+
+    $last_booking_id = $booking[0]->ID;
+    $cottage_id = $booking[0]->cottage_id;
+    $cottage_title = get_the_title($cottage_id);   
+    $booking_Arrival = $booking[0]->cottage_arrival_date;
+    $booking_departure = $booking[0]->cottage_departure_date;
+	$nights = round((strtotime($booking_departure) - strtotime($booking_Arrival))/86400,0);
+	$cottage_total = $booking[0]->cottage_total;
+	$people = $booking[0]->people;	
+	
+	
+    $user_login = stripslashes($user->user_login);
+    $user_email = stripslashes($user->user_email);
+
+    $body_head = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+    <head>
+        <title>Booking Email</title>
+    </head>
+    <body>';
+    $body_foot = '</body></html>';
+
+    $message = get_option("bayview_confirmation_email", "");
+
+    if (empty($message)) {
+
+        $message = 'THANK YOU!\n
+\n
+Your request has been processed.  We will contact you within\n
+48 hours to confirm your reservation.\n
+\n
+Request No.  ODR-' . $last_booking_id . '\n
+Please write down the request number!\n
+\n
+All reservations are subject to approval by the Resort.\n';
+    }
+  $find = array('/##BOOKINGSTATUS##/i', '/##COTTAGENAME##/i', '/##ARRIVALDATE##/i', '/##DEPARTUREDATE##/i', '/##USERNAME##/i', '/##BLOGNAME##/i', '/##SITEURL##/i', '/##LOGINURL##/i', '/##USEREMAIL##/i', '/##WEBSITE##/i', '/##REQUESTNO##/i', '/##COST##/i', '/##PERSON##/i', '/##COTTAGENAME##/i', '/##NIGHTS##/i', '/##NAME##/i');
+    $replace = array($status_got, get_post($cottage_id)->post_title, $booking_Arrival, $booking_departure, $user_login, get_settings('blogname'), get_settings('siteurl'), get_settings('siteurl') . '/wp-login.php', $user_email, get_settings('siteurl') . '/wp-login.php', $last_booking_id,$cottage_total,$people,$cottage_title,$nights,$name);
+ 
+  
+    $headers = "MIME-Version: 1.0\n" .
+            "Content-Type: text/plain; charset=\"" . get_settings('blog_charset') . "\"\n" .
+            "From: " . get_settings('admin_email') . "\n" .
+            "CC: " . get_settings('admin_email') . "\n";
+
+    $subject = "Booking Confirmation at " . get_settings('blogname') ;
     $subject = preg_replace($find, $replace, $subject);
     $subject = preg_replace("/##.*##/", "", $subject); //get rid of any remaining variables
 
@@ -3520,6 +3639,8 @@ All reservations are subject to approval by the Resort.\n';
 
 function send_booking_email_notification($user_id) {
     global $last_booking_id;
+    $last_booking_id = get_user_meta($user_id, '_last_booking_id', true);
+    delete_user_meta($user_id, '_last_booking_id');
     $user = new WP_User($user_id);
 
     $user_login = stripslashes($user->user_login);
@@ -3533,7 +3654,7 @@ function send_booking_email_notification($user_id) {
     <body>';
     $body_foot = '</body></html>';
 
-    $message = get_option("bayview_booking_email", "");
+    $message = get_option("bayview_booking_email", true);
 
     if (empty($message)) {
 
@@ -3556,16 +3677,20 @@ All reservations are subject to approval by the Resort.\n';
             "From: " . get_settings('admin_email') . "\n" .
             "CC: " . get_settings('admin_email') . "\n";
 
-    $subject = "Booking Confirmation at '" . get_settings('blogname') . "'";
-    $subject = preg_replace($find, $replace, $subject);
-    $subject = preg_replace("/##.*##/", "", $subject); //get rid of any remaining variables
+    $subject = "Booking Confirmation at " . get_settings('blogname') ;
+//    $subject = preg_replace($find, $replace, $subject);
+//    $subject = preg_replace("/##.*##/", "", $subject); //get rid of any remaining variables
 
 
     $message = preg_replace($find, $replace, $message);
     $message = preg_replace("/##.*##/", "", $message); //get rid of any remaining variables
     $message = $body_head . $message . $body_foot;
     add_filter('wp_mail_content_type', create_function('', 'return "text/html"; '));
+    //print($headers);
+  //print($user_email.$subject.$message.$headers);
+   
     wp_mail($user_email, $subject, $message, $headers);
+    
 }
 
 add_action('wp_ajax_bayview_update_booking_status', 'bayview_update_booking_status');
@@ -3782,30 +3907,39 @@ function findOffers($date = '', $nights = 0, $available_cottages = array()) {
     return $offers;
 }
 
-function findCottages($arrival, $departure = '') {
+function findCottages($arrival, $departure = '', $people = '') {
 
-    $booked_cottages = getScheduleCottages($arrival, $departure);
-
-    $args = array(
-        'post_type' => 'cottage',
-        'post__in'=>$booked_cottages,
-        'posts_per_page' => -1
-    );
+    $cottages_available = getScheduleCottages(null, $arrival, $departure);
+    if (!empty($cottages_available)) {
+        $args = array(
+            'post_type' => 'cottage',
+            'post__in' => $cottages_available,
+            'posts_per_page' => -1,
+            'meta_query' => array(array(
+                    'key' => '_people',
+                    'compare' => '>=',
+                    'value' => $people,
+                    'type' => 'numeric',
+                )
+            )
+        );
 
 //    if (!empty($booked_cottages)) {
 //        $args['post__not_in'] = $booked_cottages;
 //    }
 
-    $cottages = get_posts($args);
+        $cottages = get_posts($args);
 
-    if (empty($departure)) {
+        if (empty($departure)) {
 
-        foreach ($cottages as $key => $cottage) {
-            $cottages[$key]->available_for = getCottageAvailability($cottage->ID, $arrival);
+            foreach ($cottages as $key => $cottage) {
+                $cottages[$key]->available_for = getCottageAvailability($cottage->ID, $arrival);
+            }
         }
+        return $cottages;
     }
-
-    return $cottages;
+    return ;
+    
 }
 
 function getCottageAvailability($cottage_id, $date) {
@@ -3825,6 +3959,7 @@ add_action('wp_ajax_bayview_find_offers_and_cottages', 'bayview_find_offers_and_
 function bayview_find_offers_and_cottages() {
     $arrival = $_POST['arrival_date'];
     $departure = $_POST['departure_date'];
+    $people = $_POST['people'];
 
     if (empty($arrival) || strtotime($arrival) < strtotime(date('Y-m-d'))) {
         echo json_encode(array('status' => 'error', 'result' => null, 'msg' => 'The Arrival Date you entered is Invalid. Please select the current or upcoming date.'));
@@ -3842,9 +3977,9 @@ function bayview_find_offers_and_cottages() {
         }
         $nights = floor((strtotime($departure) - strtotime($arrival)) / (3600 * 24)) + 1;
 
-        $_cottages = findCottages($arrival, $departure);
+        $_cottages = findCottages($arrival, $departure, $people);
     } else {
-        $_cottages = findCottages($arrival);
+        $_cottages = findCottages($arrival, $departure = '', $people);
     }
 
     if (!empty($_cottages)) {
@@ -3874,16 +4009,16 @@ function bayview_find_offers_and_cottages() {
             $c['availability'] = $cottage->available_for;
         }
         $c['people'] = intval($meta['_people'][0]);
-        
+
         $offer_cottage_data[$cottage->ID]['people'] = $c['people'];
-        
+
         $cottages[] = $c;
     }
 
 
     $_addons = get_posts(array(
         'post_type' => 'addon',
-        'posts_per_page' => -1
+        'posts_per_page' => -1,
             ));
 
     $addons = array();
